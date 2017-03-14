@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:title="Hospital Platform Url"
+        android:key="iq_url"
+        android:summary="Please provide Hospital IQ Url"
+        android:defaultValue="https://iqhospital.io">
+    </EditTextPreference>
+
+</PreferenceScreen>
