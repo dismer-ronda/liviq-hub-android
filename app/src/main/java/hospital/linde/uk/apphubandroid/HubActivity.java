@@ -1,9 +1,6 @@
 package hospital.linde.uk.apphubandroid;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -17,13 +14,13 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.RequiresApi;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -40,15 +37,17 @@ import java.util.List;
 import hospital.linde.uk.apphubandroid.utils.Utils;
 import lombok.Getter;
 
-public class HubActivity extends AppCompatActivity {
+public class HubActivity extends MyBaseActivity {
     private final static String TAG = HubActivity.class.getSimpleName();
 
-    private static final int SCAN_TIMEOUT = 5000;
+    private Integer bleTimeout;
 
-    private View mHubFormView;
+    private View mContainerView;
     private View mProgressView;
     private TextView mHubLabel;
     private ListView listView;
+    private Button nextButton;
+    private Button infoButton;
 
     private ArrayList<String> listItems = new ArrayList<String>();
     private ArrayAdapter<String> adapter;
@@ -76,7 +75,8 @@ public class HubActivity extends AppCompatActivity {
                         + Utils.convertToHex( bytes[19] );
                 Log.i(TAG, "pegasusMac " + pegasusMac);
 
-                if ( pegasusMac.startsWith( "B8:27:EB:") ) {
+                if ( pegasusMac.startsWith( "B8:27:EB:") )
+                {
                     for (String item : listItems)
                         if (item.equals(pegasusMac))
                             return;
@@ -125,11 +125,11 @@ public class HubActivity extends AppCompatActivity {
                     adapter.notifyDataSetChanged();
 
                     mHubLabel.setText( listItems.size() > 0 ? R.string.ble_device_select : R.string.ble_device_not_found );
-                    showProgress(false);
+                    showProgress(false, mContainerView, mProgressView);
 
                     Toast.makeText(HubActivity.this, getString(R.string.ble_scan_report).replaceAll("%1", Integer.toString(listItems.size())), Toast.LENGTH_SHORT).show();
                 }
-            }, SCAN_TIMEOUT);
+            }, bleTimeout);
 
             scanning = true;
 
@@ -158,7 +158,7 @@ public class HubActivity extends AppCompatActivity {
         setContentView(R.layout.activity_hub);
 
         mProgressView = findViewById(R.id.search_progress);
-        mHubFormView = findViewById(R.id.hub_list);
+        mContainerView = findViewById(R.id.hub_list);
         mHubLabel = (TextView)findViewById(R.id.hub_label);
 
         setTitle(LoginActivity.getHospital().getName() + " " + getString( R.string.at ) + " " + LocationActivity.getSelectedLocation().getName());
@@ -186,16 +186,18 @@ public class HubActivity extends AppCompatActivity {
             }
         });
 
-        button = (Button) findViewById(R.id.info);
-        button.setOnClickListener(new View.OnClickListener() {
+        infoButton = (Button) findViewById(R.id.info);
+        infoButton.setVisibility(View.GONE);
+        infoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 onInfoClick();
             }
         });
 
-        button = (Button) findViewById(R.id.setup);
-        button.setOnClickListener(new View.OnClickListener() {
+        nextButton = (Button) findViewById(R.id.setup);
+        nextButton.setVisibility(View.GONE);
+        nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 onTransmitClick();
@@ -209,7 +211,7 @@ public class HubActivity extends AppCompatActivity {
 
         listView = (ListView) findViewById(R.id.list);
         listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        listView.setSelector(R.color.list_selected_background);
+        listView.setSelector(R.color.colorPrimary);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(
                 new AdapterView.OnItemClickListener() {
@@ -217,6 +219,8 @@ public class HubActivity extends AppCompatActivity {
                     public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
                         selectedMac = ((TextView) arg1).getText().toString();
                         selectedHub = mBluetoothAdapter.getRemoteDevice( bleMap.get( selectedMac ) );
+                        nextButton.setVisibility(View.VISIBLE);
+                        infoButton.setVisibility(View.VISIBLE);
                     }
                 }
         );
@@ -226,42 +230,6 @@ public class HubActivity extends AppCompatActivity {
             startActivityForResult(enableBtIntent, 1);
         } else {
             onScanClick();
-        }
-    }
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mHubFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mHubFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mHubFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mHubFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
 
@@ -277,6 +245,9 @@ public class HubActivity extends AppCompatActivity {
         selectedMac = null;
         selectedHub = null;
 
+        infoButton.setVisibility(View.GONE);
+        nextButton.setVisibility(View.GONE);
+
         listItems.clear();
         adapter.notifyDataSetChanged();
 
@@ -284,7 +255,10 @@ public class HubActivity extends AppCompatActivity {
 
         mHubLabel.setText( R.string.ble_device_scanning );
 
-        showProgress(true);
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences( this );
+        bleTimeout = Integer.parseInt( sharedPref.getString( SettingsFragment.SETTINGS_BlE_SCAN_TIMEOUT, "5000") );
+
+        showProgress(true, mContainerView, mProgressView);
         scanLeDevice(true);
     }
 

@@ -10,7 +10,8 @@ import android.preference.PreferenceFragment;
 
 public class SettingsFragment extends PreferenceFragment {
 
-    final static String SETTINGS_HOSPITAL_URL = "iq_url";
+    final static String SETTINGS_HOSPITAL_URL       = "iq_url";
+    final static String SETTINGS_BlE_SCAN_TIMEOUT   = "ble_timeout";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

@@ -2,28 +2,22 @@ package hospital.linde.uk.apphubandroid;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
-import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import hospital.linde.uk.apphubandroid.utils.Location;
 import lombok.Getter;
 import lombok.Setter;
 
-public class LocationActivity extends AppCompatActivity
+public class LocationActivity extends MyBaseActivity
 {
     private ListView listView;
+    private Button nextButton;
 
     @Getter @Setter private static Location selectedLocation = null;
 
@@ -42,7 +36,7 @@ public class LocationActivity extends AppCompatActivity
 
         listView = (ListView) findViewById(R.id.list);
         listView.setChoiceMode( ListView.CHOICE_MODE_SINGLE );
-        listView.setSelector( R.color.list_selected_background );
+        listView.setSelector( R.color.colorPrimary );
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener()
         {
             @Override
@@ -51,8 +45,11 @@ public class LocationActivity extends AppCompatActivity
                 String selected = (String) listView.getItemAtPosition(position);
 
                 for ( Location location : LoginActivity.getLocations() )
-                    if ( selected.equals( location.getName() ) )
+                    if ( selected.equals( location.getName() ) ) {
                         selectedLocation = location;
+                        nextButton.setVisibility(View.VISIBLE);
+                    }
+
             }
         });
         listView.setAdapter(adapter);
@@ -66,8 +63,9 @@ public class LocationActivity extends AppCompatActivity
             }
         });
 
-        button = (Button) findViewById( R.id.next );
-        button.setOnClickListener(new View.OnClickListener() {
+        nextButton = (Button) findViewById( R.id.next );
+        nextButton.setVisibility( View.GONE );
+        nextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 

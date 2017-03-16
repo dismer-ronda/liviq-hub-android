@@ -8,6 +8,9 @@
     <string name="action_sign_in_short">Login</string>
     <string name="error_incorrect_password">Invalid authorisation credentials</string>
     <string name="error_field_required">This field is required</string>
+    <string name="error_hospitals">Error retrieving Hospital information</string>
+    <string name="error_locations">Error retrieving locations information</string>
+    <string name="error_unknown">Unknown error</string>
     <string name="title_activity_settings">Settings</string>
     <string name="settings">Settings</string>
     <string name="error_user_not_authorized">User not authorised for configuring IQHubs.</string>
@@ -16,7 +19,7 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_activity_logged">Logged in as</string>
-    <string name="start_configuration">Start configuration</string>
+    <string name="start_configuration">Next</string>
     <string name="user_name">Name:</string>
     <string name="hospital_name">Hospital:</string>
 
@@ -40,20 +43,32 @@
     <string name="ble_device_select">Select IQ Hub</string>
     <string name="ble_device_configuring">Configuring IQ Hub</string>
     <string name="ble_device_not_found">No IQ Hubs found. Scan again</string>
-    <string name="prompt_wifi_ssid">Wifi SSID</string>
-    <string name="prompt_wifi_password">Wifi Password</string>
     <string name="ble_device_configure">Set IQ Hub configuration</string>
     <string name="scan">Scan</string>
     <string name="setup">Setup</string>
     <string name="remember_login">Remember login</string>
+
+    <string name="prompt_wifi_ssid">Wifi SSID</string>
+    <string name="prompt_wifi_password">Wifi Password</string>
+
     <string name="prompt_proxy_server">Proxy server</string>
     <string name="prompt_proxy_port">Proxy port</string>
     <string name="prompt_proxy_user">Proxy user</string>
     <string name="prompt_proxy_password">Proxy password</string>
+
+    <string name="prompt_address">Address</string>
+    <string name="prompt_netmask">Netmask</string>
+    <string name="prompt_gateway">Gateway</string>
+
+    <string name="enable_setup">Custom setup</string>
     <string name="enable_wifi">Enable wifi</string>
     <string name="enable_proxy">Enable proxy</string>
+    <string name="enable_static">Enable static IP</string>
+
     <string name="success">Success</string>
     <string name="failure">Failure</string>
     <string name="at">at</string>
     <string name="exit">exit</string>
+    <string name="not_ready">Not ready to configure</string>
+    <string name="setup_instructions"> Confirm green led is lit on selected hub. If not, press back and choose a different hub. Select options and press transmit to setup hub.</string>
 </resources>

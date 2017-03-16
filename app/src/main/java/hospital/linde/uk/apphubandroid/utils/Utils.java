@@ -1,12 +1,20 @@
 package hospital.linde.uk.apphubandroid.utils;
 
 import android.content.res.AssetManager;
+import android.util.Log;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 /**
  * Created by dismer on 10/03/17.
@@ -14,6 +22,8 @@ import java.util.List;
 
 public class Utils
 {
+    private final static String TAG = Utils.class.getSimpleName();
+
     private static final int[] crc16_table = {
             0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
             0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
@@ -200,4 +210,54 @@ public class Utils
     {
         return ((hi & 0xffff) << 16) | (lo & 0xffff);
     }
+
+    public static String platformCall(String serviceUrl, String method, int timeout, String body, String[] headers) {
+        Log.i(TAG, "platformCall " + serviceUrl + "\nmethod " + method + "\nbody " + body );
+
+        HttpsURLConnection urlConnection = null;
+
+        try {
+            URL url = new URL(serviceUrl);
+
+            urlConnection = (HttpsURLConnection) url.openConnection();
+
+            SSLContext sc;
+            sc = SSLContext.getInstance("TLS");
+            sc.init(null, null, new java.security.SecureRandom());
+
+            urlConnection.setSSLSocketFactory(sc.getSocketFactory());
+            urlConnection.setRequestMethod( method );
+            urlConnection.setReadTimeout(timeout);
+
+            for ( String header : headers ) {
+                String parts[] = header.split( ":" );
+                if ( parts.length == 2 )
+                    urlConnection.setRequestProperty( parts[0], parts[1] );
+            }
+
+            if ( body != null ) {
+                OutputStream output = urlConnection.getOutputStream();
+                output.write( body.getBytes("UTF8") );
+            }
+
+            urlConnection.connect();
+
+            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            StringBuilder out = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null)
+                out.append(line);
+
+            return out.toString();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        } finally {
+            if (urlConnection != null)
+                urlConnection.disconnect();
+        }
+
+        return null;
+    }
+
 }

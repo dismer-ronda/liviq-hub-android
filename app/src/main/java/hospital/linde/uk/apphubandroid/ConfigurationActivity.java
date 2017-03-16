@@ -1,9 +1,6 @@
 package hospital.linde.uk.apphubandroid;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -17,12 +14,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -32,13 +30,19 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.net.ssl.HttpsURLConnection;
+
+import hospital.linde.uk.apphubandroid.utils.JsonSerializer;
+import hospital.linde.uk.apphubandroid.utils.Location;
+import hospital.linde.uk.apphubandroid.utils.Pegasus;
 import hospital.linde.uk.apphubandroid.utils.Utils;
 
-public class ConfigurationActivity extends AppCompatActivity {
+public class ConfigurationActivity extends MyBaseActivity {
     private final static String TAG = ConfigurationActivity.class.getSimpleName();
 
     private static final int STATE_DISCONNECTED = 0;
@@ -58,15 +62,21 @@ public class ConfigurationActivity extends AppCompatActivity {
     public final static String IQHubMainServivceUuid                = "14839ac4-7d7e-415c-9a42-167340cf2339";
     public final static String IQHubCharacteristicsDescriptorUuid   = "00002902-0000-1000-8000-00805f9b34fb";
 
-    private View mHubFormView;
+    private View mContainerView;
     private View mProgressView;
 
+    private TextView mHubLabel;
+
+    private View setupView;
     private View wifiView;
     private View proxyView;
+    private View staticView;
 
-    private TextView mHubLabel;
+    private CheckBox checkSetup;
     private CheckBox checkWifi;
     private CheckBox checkProxy;
+    private CheckBox checkStatic;
+    private Button transmitButton;
 
     private EditText wifiId;
     private EditText wifiPassword;
@@ -75,6 +85,10 @@ public class ConfigurationActivity extends AppCompatActivity {
     private EditText proxyPortView;
     private EditText proxyUserView;
     private EditText proxyPasswordView;
+
+    private EditText addressView;
+    private EditText netmaskView;
+    private EditText gatewayView;
 
     private int mConnectionState = STATE_DISCONNECTED;
 
@@ -88,25 +102,42 @@ public class ConfigurationActivity extends AppCompatActivity {
 
     private boolean connected = false;
 
+    private boolean enableSetup = false;
     private boolean enableWifi = false;
     private boolean enableProxy = false;
+    private boolean enableStatic = false;
+
+    private ConfigurationTask task = null;
+
+    private String hospitalUrl;
+    private Pegasus pegasus = null;
+    private String pegasusToken = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuration);
 
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        hospitalUrl = sharedPref.getString( SettingsFragment.SETTINGS_HOSPITAL_URL, "https://iqhospital.io");
+
         enableWifi = LoginActivity.getHospital().getConfigParameters().getWifiEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getWifiEnabled();
         enableProxy = LoginActivity.getHospital().getConfigParameters().getProxyEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getProxyEnabled();
+        enableStatic = false; /*LoginActivity.getHospital().getConfigParameters().getProxyEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getStaticEnabled();*/
 
-        mHubFormView = findViewById(R.id.scroll_configuration);
+        mContainerView = findViewById(R.id.contents);
         mProgressView = findViewById(R.id.search_progress);
+
+        mHubLabel = (TextView)findViewById(R.id.top_label);
+
+        setupView = findViewById(R.id.hub_configuration);
+        setupView.setVisibility( View.GONE );
 
         wifiView = findViewById(R.id.wifi_configuration);
         proxyView = findViewById(R.id.proxy_configuration);
+        staticView = findViewById(R.id.static_configuration);
 
-        mHubLabel = (TextView)findViewById(R.id.hub_label);
-        mHubLabel.setText( R.string.ble_device_configure );
+        checkSetup = (CheckBox) findViewById(R.id.checkbox_setup);
 
         checkWifi = (CheckBox) findViewById(R.id.checkbox_wifi);
         checkWifi.setChecked( enableWifi );
@@ -136,6 +167,15 @@ public class ConfigurationActivity extends AppCompatActivity {
         proxyPasswordView = (EditText) findViewById(R.id.proxy_password);
         proxyPasswordView.setText( LoginActivity.getProxyPassword() );
 
+        checkStatic = (CheckBox) findViewById(R.id.checkbox_static);
+        checkStatic.setChecked( enableStatic );
+
+        staticView.setVisibility( enableStatic ? View.VISIBLE : View.GONE );
+
+        addressView = (EditText) findViewById(R.id.address);
+        netmaskView = (EditText) findViewById(R.id.netmask);
+        gatewayView = (EditText) findViewById(R.id.gateway);
+
         IntentFilter filter = new IntentFilter();
         filter.addAction( ACTION_GATT_CONNECTED );
         filter.addAction( ACTION_GATT_DISCONNECTED );
@@ -159,21 +199,29 @@ public class ConfigurationActivity extends AppCompatActivity {
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
+        mBluetoothGatt = HubActivity.getSelectedHub().connectGatt(this, false, mGattCallback);
+
         Button button = (Button) findViewById(R.id.back);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                onCancelClick();
+                onBackPressed();
             }
         });
 
-        button = (Button) findViewById(R.id.transmit);
-        button.setOnClickListener(new View.OnClickListener() {
+        transmitButton = (Button) findViewById(R.id.transmit);
+        transmitButton.setVisibility( View.GONE );
+        transmitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 onTransmitClick();
             }
         });
+    }
+
+    public void onCheckboxSetupClicked(View view) {
+        enableSetup = ((CheckBox) view).isChecked();
+        setupView.setVisibility( enableSetup ? View.VISIBLE : View.GONE );
     }
 
     public void onCheckboxWifiClicked(View view) {
@@ -198,44 +246,42 @@ public class ConfigurationActivity extends AppCompatActivity {
         proxyView.setVisibility( enableProxy ? View.VISIBLE : View.GONE );
     }
 
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mHubFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mHubFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mHubFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mHubFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+    public void onCheckboxStaticClicked(View view) {
+        View focus = this.getCurrentFocus();
+        if (focus == addressView || focus == netmaskView|| focus == gatewayView) {
+            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
+
+        enableStatic = ((CheckBox) view).isChecked();
+        staticView.setVisibility( enableStatic ? View.VISIBLE : View.GONE );
     }
 
-    private void onCancelClick() {
-        onBackPressed();
+    @Override
+    public void onBackPressed()
+    {
+        mBluetoothGatt.close();
+        mBluetoothGatt.disconnect();
+
+        unregisterReceiver(mGattUpdateReceiver);
+
+        // code here to show dialog
+        super.onBackPressed();
+    }
+
+    private void onTransmitClick() {
+        showProgress(true, mContainerView, mProgressView);
+        mHubLabel.setText( R.string.ble_device_configuring );
+
+        // Check if no view has focus:
+        View view = this.getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+
+        task = new ConfigurationTask(this);
+        task.execute((Void) null);
     }
 
     private final BluetoothGattCallback mGattCallback =
@@ -376,8 +422,7 @@ public class ConfigurationActivity extends AppCompatActivity {
 
     private void onDescriptorWrite()
     {
-        currentCommand = 0;
-        writeCommand( writeCommands.get( currentCommand ) );
+        transmitButton.setVisibility( View.VISIBLE );
     }
 
     private void onReceivedResponse( Intent intent )
@@ -413,8 +458,7 @@ public class ConfigurationActivity extends AppCompatActivity {
         mBluetoothGatt.close();
         mBluetoothGatt.disconnect();
 
-        mHubLabel.setText( R.string.ble_device_configure );
-        showProgress(false);
+        showProgress(false, mContainerView, mProgressView);
     }
 
     private void terminateSuccess()
@@ -442,6 +486,7 @@ public class ConfigurationActivity extends AppCompatActivity {
     private void terminateFailure()
     {
         bluetoothDisconnect();
+        unregisterReceiver(mGattUpdateReceiver);
 
         AlertDialog alertDialog = new AlertDialog.Builder(this).create();
         alertDialog.setTitle(getString( R.string.failure));
@@ -450,6 +495,7 @@ public class ConfigurationActivity extends AppCompatActivity {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
+                        ConfigurationActivity.this.finish();
                     }
                 });
         alertDialog.show();
@@ -497,7 +543,7 @@ public class ConfigurationActivity extends AppCompatActivity {
         return enableProxy ? (!proxyServer.isEmpty() ? (proxyServer + (!proxyPort.isEmpty() ? (":" + proxyPort) : "") + (!proxyUser.isEmpty() ? (" -U " + proxyUser + ":" + proxyPassword) : "")) : " ") : " ";
     }
 
-    private void prepareConfiguration()
+    private void prepareConfiguration( String hospitalUrl )
     {
         String wifiAction = enableWifi ?
                 (
@@ -506,16 +552,28 @@ public class ConfigurationActivity extends AppCompatActivity {
                     "<ACTION id=\"A070\">" + wifiPassword.getText() +"</ACTION>\n"
                 ) : "<ACTION id=\"A071\">0</ACTION>\n";
 
+        String staticAction = enableStatic ?
+                (
+                        "<ACTION id=\"A083\">1</ACTION>\n" +
+                                "<ACTION id=\"A084\">" + addressView.getText() +"</ACTION>\n" +
+                                "<ACTION id=\"A085\">" + netmaskView.getText() +"</ACTION>\n" +
+                                "<ACTION id=\"A086\">" + gatewayView.getText() +"</ACTION>\n"
+                ) : "<ACTION id=\"A083\">0</ACTION>\n";
+
         String setupCommand =
                 "<ANSWER>\n" +
                         "<STATUS>0</STATUS>\n" +
 
                         "<ACTIONS>\n"  +
+                            "<ACTION id=\"A062\">" + pegasusToken + "</ACTION>\n" +
+
+                            "<ACTION id=\"A081\">" + hospitalUrl +  "/feed/cylinders</ACTION>\n" +
 
                             "<ACTION id=\"A064\">" + LocationActivity.getSelectedLocation().getName() +"</ACTION>\n" +
                             "<ACTION id=\"A065\">" + LocationActivity.getSelectedLocation().getId() +"</ACTION>\n" +
 
                             wifiAction +
+                            staticAction +
 
                             "<ACTION id=\"A074\">" + getProxySettings() +"</ACTION>\n" +
 
@@ -535,27 +593,149 @@ public class ConfigurationActivity extends AppCompatActivity {
         writeCommands.add( getConfigurationCrcBuffer( (short)crc ) );
     }
 
-    private void onTransmitClick() {
-        mHubLabel.setText( R.string.ble_device_configuring );
-        showProgress(true);
-        prepareConfiguration();
+    public class ConfigurationTask extends AsyncTask<Void, Void, Boolean> {
+        private ConfigurationActivity parentActivity;
 
-        // Check if no view has focus:
-        View view = this.getCurrentFocus();
-        if (view != null) {
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        ConfigurationTask(ConfigurationActivity parentActivity) {
+            this.parentActivity = parentActivity;
         }
 
-        mBluetoothGatt = HubActivity.getSelectedHub().connectGatt(this, false, mGattCallback);
-    }
+        private Location getLocation(String hospitalUrl, Integer locationId, Integer hospitalId, String token) {
+            try {
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/locations/" + locationId + "?hospitalId=" + hospitalId + "&access_token=" + token, "GET", 10000, null, headers );
+                Log.i( TAG, "getLocation " + response );
 
-    @Override
-    public void onBackPressed()
-    {
-        unregisterReceiver(mGattUpdateReceiver);
+                return (Location) JsonSerializer.toPojo(response, Location.class);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
 
-        // code here to show dialog
-        super.onBackPressed();
+            return null;
+        }
+
+        private String getPegasusToken(String hospitalUrl, Pegasus pegasus, String token) {
+            try {
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/hubs/getToken?hospitalId=" + pegasus.getHospitalId() + "&access_token=" + token, "POST", 10000, JsonSerializer.toJson(pegasus), headers );
+                Log.i( TAG, "getPegasusToken " + response );
+
+                return response;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        private Pegasus getPegasus(String hospitalUrl, String macAddress, Integer hospitalId, String token) {
+            try {
+                String filter = URLEncoder.encode("{\"where\":{\"macAddress\":\"" + macAddress + "\", \"hospitalId\":" + hospitalId + "}}", "UTF8");
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/hubs/findOne?filter=" + filter + "&access_token=" + token, "GET", 10000, null, headers );
+                Log.i( TAG, "getPegasus " + response );
+
+                return (Pegasus) JsonSerializer.toPojo( response, Pegasus.class);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        private boolean addPegasus(String hospitalUrl, Pegasus pegasus, String token) {
+            HttpsURLConnection urlConnection = null;
+
+            try {
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/hubs?access_token=" + token, "PUT", 10000, JsonSerializer.toJson(pegasus), headers );
+                Log.i(TAG, "addPegasus " + response );
+
+                JsonSerializer.toPojo( response, Pegasus.class);
+
+                return true;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            } finally {
+                if (urlConnection != null)
+                    urlConnection.disconnect();
+            }
+
+            return false;
+        }
+
+        private boolean updatePegasus(String hospitalUrl, Pegasus pegasus,String token) {
+            HttpsURLConnection urlConnection = null;
+
+            try {
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/hubs/" + pegasus.getId() + "?access_token=" + token, "PUT", 10000, JsonSerializer.toJson(pegasus), headers );
+                Log.i(TAG, "updatePegasus " + response );
+
+                JsonSerializer.toPojo( response, Pegasus.class);
+
+                return true;
+            } catch (Throwable e) {
+                e.printStackTrace();
+            } finally {
+                if (urlConnection != null)
+                    urlConnection.disconnect();
+            }
+
+            return false;
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params)
+        {
+            pegasus = getPegasus( hospitalUrl, HubActivity.getSelectedMac(), LoginActivity.getHospital().getId(), LoginActivity.getToken().getId() );
+
+            if ( pegasus != null )
+            {
+                /*Location location = getLocation( hospitalUrl, pegasus.getLocationId(), LoginActivity.getHospital().getId(), LoginActivity.getToken().getId() );
+
+                if ( location != null )
+                {
+                    pegasus.setCurrentLocation( location.getName() );
+                }*/
+
+                pegasus.setLocationId( LocationActivity.getSelectedLocation().getId() );
+                pegasus.setHospitalId( LoginActivity.getHospital().getId() );
+                pegasus.setDeleted( "0" );
+
+                updatePegasus( hospitalUrl, pegasus, LoginActivity.getToken().getId() );
+            }
+            else
+            {
+                pegasus = new Pegasus();
+
+                pegasus.setMacAddress( HubActivity.getSelectedMac() );
+                pegasus.setName( HubActivity.getSelectedMac() );
+                pegasus.setFriendlyName( HubActivity.getSelectedMac() );
+                pegasus.setLocationId( LocationActivity.getSelectedLocation().getId() );
+                pegasus.setHospitalId( LoginActivity.getHospital().getId() );
+                pegasus.setDeleted( "0" );
+
+                addPegasus( hospitalUrl, pegasus, LoginActivity.getToken().getId() );
+            }
+
+            pegasusToken = getPegasusToken( hospitalUrl, pegasus, LoginActivity.getToken().getId() );
+
+            return pegasusToken != null;
+        }
+
+        @Override
+        protected void onPostExecute( final Boolean success )
+        {
+            if ( success ) {
+                prepareConfiguration(hospitalUrl);
+
+                currentCommand = 0;
+                writeCommand( writeCommands.get( currentCommand ) );
+            }
+            else {
+                showProgress(false, mContainerView, mProgressView);
+            }
+        }
     }
 }

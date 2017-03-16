@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 public class Location
 {
-    private String id;
+    private Integer id;
     private String desc;
     private String name;
     private Integer hospitalId;

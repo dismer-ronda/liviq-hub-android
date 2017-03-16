@@ -7,4 +7,10 @@
         android:defaultValue="https://iqhospital.io">
     </EditTextPreference>
 
+    <EditTextPreference
+        android:title="Bluetooth scaning timeout"
+        android:key="ble_timeout"
+        android:summary="Please provide bluetooth scaning timeout"
+        android:defaultValue="5000">
+    </EditTextPreference>
 </PreferenceScreen>

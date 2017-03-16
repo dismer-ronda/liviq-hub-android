@@ -32,4 +32,6 @@ public class HospitalConfigParameters
     private Integer fromStoreTimeWindow;
     private Integer hospitalId;
     private String deleted;
+
+    private Boolean staticEnabled;
 }

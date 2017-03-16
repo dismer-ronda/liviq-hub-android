@@ -4,23 +4,21 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -28,18 +26,9 @@ import android.widget.TextView;
 
 import com.google.gson.reflect.TypeToken;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 
 import hospital.linde.uk.apphubandroid.utils.Hospital;
 import hospital.linde.uk.apphubandroid.utils.JsonSerializer;
@@ -47,14 +36,17 @@ import hospital.linde.uk.apphubandroid.utils.Location;
 import hospital.linde.uk.apphubandroid.utils.Role;
 import hospital.linde.uk.apphubandroid.utils.Token;
 import hospital.linde.uk.apphubandroid.utils.User;
+import hospital.linde.uk.apphubandroid.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
 
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends AppCompatActivity
+public class LoginActivity extends MyBaseActivity
 {
+    private final static String TAG = LoginActivity.class.getSimpleName();
+
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -136,28 +128,6 @@ public class LoginActivity extends AppCompatActivity
 
     public void onCheckboxClicked(View view) {
         rememberLogin = ((CheckBox) view).isChecked();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.settings_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected( MenuItem item )
-    {
-        // Handle item selection
-        switch ( item.getItemId() )
-        {
-            case R.id.settings_option:
-                startActivity( new Intent( LoginActivity.this, SettingsActivity.class ) );
-                return true;
-            default:
-                return super.onOptionsItemSelected( item );
-        }
     }
 
     private void onExit()
@@ -268,8 +238,8 @@ public class LoginActivity extends AppCompatActivity
         public final int ERROR_NONE                     = 0;
         public final int ERROR_INVALID_LOGIN            = 1;
         public final int ERROR_INVALID_PROFILE          = 2;
-        public final int ERROR_EXCEPTION_ROLE           = 3;
-        public final int ERROR_EXCEPTION_TOKEN          = 4;
+        public final int ERROR_HOSPITALS                = 3;
+        public final int ERROR_LOCATIONS                = 4;
 
         private final String email;
         private final String password;
@@ -295,55 +265,21 @@ public class LoginActivity extends AppCompatActivity
 
         private Token getLoginToken( String hospitalUrl )
         {
-            HttpsURLConnection urlConnection = null;
-
             try
             {
-                URL url = new URL( hospitalUrl + "/api/appusers/login/?include=user" );
-
-                urlConnection = (HttpsURLConnection) url.openConnection();
-
-                SSLContext sc;
-                sc = SSLContext.getInstance("TLS");
-                sc.init(null, null, new java.security.SecureRandom());
-
-                urlConnection.setSSLSocketFactory(sc.getSocketFactory());
-                urlConnection.setDoOutput(true);
-                urlConnection.setRequestMethod("POST");
-                urlConnection.setReadTimeout(10000);
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("Accept", "application/json");
-
                 User user = new User();
                 user.setEmail( email) ;
                 user.setPassword( password );
 
-                OutputStream output = urlConnection.getOutputStream();
-                output.write( JsonSerializer.toJson(user).getBytes("UTF8") );
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/appusers/login/?include=user", "POST", 10000,  JsonSerializer.toJson(user), headers );
+                Log.i( TAG, "getLoginToken " + response );
 
-                urlConnection.connect();
-
-                InputStream in = new BufferedInputStream( urlConnection.getInputStream() );
-
-                BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
-                StringBuilder out = new StringBuilder();
-                String line;
-                while ( (line = reader.readLine()) != null )
-                    out.append( line );
-
-                System.out.println( "token " + out.toString() );
-
-                return (Token)JsonSerializer.toPojo( out.toString(), Token.class );
+                return (Token)JsonSerializer.toPojo( response, Token.class );
             }
             catch ( Throwable e )
             {
                 e.printStackTrace();
-                errorCode = ERROR_INVALID_LOGIN;
-            }
-            finally
-            {
-                if ( urlConnection != null )
-                    urlConnection.disconnect();
             }
 
             return null;
@@ -351,48 +287,17 @@ public class LoginActivity extends AppCompatActivity
 
         private Role getUserRole(String hospitalUrl, Integer roleId, String token)
         {
-            HttpsURLConnection urlConnection = null;
-
             try
             {
-                URL url = new URL( hospitalUrl + "/api/Roles/" + roleId + "?access_token=" + token );
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/Roles/" + roleId + "?access_token=" + token, "GET", 10000, null, headers );
+                Log.i( TAG, "getUserRole " + response );
 
-                urlConnection = (HttpsURLConnection) url.openConnection();
-
-                SSLContext sc;
-                sc = SSLContext.getInstance("TLS");
-                sc.init(null, null, new java.security.SecureRandom());
-
-                urlConnection.setSSLSocketFactory(sc.getSocketFactory());
-                //urlConnection.setDoOutput(true);
-                urlConnection.setRequestMethod("GET");
-                urlConnection.setReadTimeout(10000);
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("Accept", "application/json");
-
-                urlConnection.connect();
-
-                InputStream in = new BufferedInputStream( urlConnection.getInputStream() );
-
-                BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
-                StringBuilder out = new StringBuilder();
-                String line;
-                while ( (line = reader.readLine()) != null )
-                    out.append( line );
-
-                System.out.println( "role " + out.toString() );
-
-                return (Role)JsonSerializer.toPojo( out.toString(), Role.class );
+                return (Role)JsonSerializer.toPojo( response, Role.class );
             }
             catch ( Throwable e )
             {
                 e.printStackTrace();
-                errorCode = ERROR_EXCEPTION_ROLE;
-            }
-            finally
-            {
-                if ( urlConnection != null )
-                    urlConnection.disconnect();
             }
 
             return null;
@@ -400,49 +305,18 @@ public class LoginActivity extends AppCompatActivity
 
         private List<Hospital> getHospitalData(String hospitalUrl, Integer hospitalId, String token)
         {
-            HttpsURLConnection urlConnection = null;
-
             try
             {
                 String filter = URLEncoder.encode( "{\"where\":{\"id\":" + hospitalId + "},\"include\":\"configParameters\"}", "UTF8" );
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/hospitals?filter=" + filter + "&access_token=" + token, "GET", 10000, null, headers );
+                Log.i( TAG, "getHospitalData " + response );
 
-                URL url = new URL( hospitalUrl + "/api/hospitals?filter=" + filter + "&access_token=" + token );
-
-                urlConnection = (HttpsURLConnection) url.openConnection();
-
-                SSLContext sc;
-                sc = SSLContext.getInstance("TLS");
-                sc.init(null, null, new java.security.SecureRandom());
-
-                urlConnection.setSSLSocketFactory(sc.getSocketFactory());
-                urlConnection.setRequestMethod("GET");
-                urlConnection.setReadTimeout(10000);
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("Accept", "application/json");
-
-                urlConnection.connect();
-
-                InputStream in = new BufferedInputStream( urlConnection.getInputStream() );
-
-                BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
-                StringBuilder out = new StringBuilder();
-                String line;
-                while ( (line = reader.readLine()) != null )
-                    out.append( line );
-
-                System.out.println( "hospitals " + out.toString() );
-
-                return (List<Hospital>)JsonSerializer.toArrayList( out.toString(), new TypeToken<ArrayList<Hospital>>(){}.getType() );
+                return (List<Hospital>)JsonSerializer.toArrayList( response, new TypeToken<ArrayList<Hospital>>(){}.getType() );
             }
             catch ( Throwable e )
             {
                 e.printStackTrace();
-                errorCode = ERROR_EXCEPTION_ROLE;
-            }
-            finally
-            {
-                if ( urlConnection != null )
-                    urlConnection.disconnect();
             }
 
             return null;
@@ -450,49 +324,18 @@ public class LoginActivity extends AppCompatActivity
 
         private List<Location> getHospitalLocations( String hospitalUrl, Integer hospitalId, String token )
         {
-            HttpsURLConnection urlConnection = null;
-
             try
             {
                 String filter = URLEncoder.encode( "{\"where\":{\"hospitalId\":" + hospitalId + ", \"deleted\":0},\"include\":[\"configParameters\"]}", "UTF8" );
+                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
+                String response = Utils.platformCall( hospitalUrl + "/api/locations?filter=" + filter + "&access_token=" + token, "GET", 10000, null, headers );
+                Log.i( TAG, "getHospitalLocations " + response );
 
-                URL url = new URL( hospitalUrl + "/api/locations?filter=" + filter + "&access_token=" + token );
-
-                urlConnection = (HttpsURLConnection) url.openConnection();
-
-                SSLContext sc;
-                sc = SSLContext.getInstance("TLS");
-                sc.init(null, null, new java.security.SecureRandom());
-
-                urlConnection.setSSLSocketFactory(sc.getSocketFactory());
-                urlConnection.setRequestMethod("GET");
-                urlConnection.setReadTimeout(10000);
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("Accept", "application/json");
-
-                urlConnection.connect();
-
-                InputStream in = new BufferedInputStream( urlConnection.getInputStream() );
-
-                BufferedReader reader = new BufferedReader( new InputStreamReader( in ) );
-                StringBuilder out = new StringBuilder();
-                String line;
-                while ( (line = reader.readLine()) != null )
-                    out.append( line );
-
-                System.out.println( "locations " + out.toString() );
-
-                return (List<Location>)JsonSerializer.toArrayList( out.toString(), new TypeToken<ArrayList<Location>>(){}.getType() );
+                return (List<Location>)JsonSerializer.toArrayList( response, new TypeToken<ArrayList<Location>>(){}.getType() );
             }
             catch ( Throwable e )
             {
                 e.printStackTrace();
-                errorCode = ERROR_EXCEPTION_ROLE;
-            }
-            finally
-            {
-                if ( urlConnection != null )
-                    urlConnection.disconnect();
             }
 
             return null;
@@ -505,24 +348,34 @@ public class LoginActivity extends AppCompatActivity
             String hospitalUrl = sharedPref.getString( SettingsFragment.SETTINGS_HOSPITAL_URL, "https://iqhospital.io");
 
             Token token = getLoginToken( hospitalUrl );
-            if ( token == null )
+            if ( token == null ) {
+                errorCode = ERROR_INVALID_LOGIN;
                 return false;
+            }
 
             Role role = getUserRole( hospitalUrl, token.getUser().getRoleId(), token.getId() );
-            if ( role == null )
+            if ( role == null ) {
+                errorCode = ERROR_INVALID_LOGIN;
                 return false;
+            }
+
             if ( !role.getName().equals( "HospitalService" ) )
             {
                 errorCode = ERROR_INVALID_PROFILE;
                 return false;
             }
+
             List<Hospital> hospitals = getHospitalData( hospitalUrl, token.getUser().getHospitalId(), token.getId() );
-            if ( hospitals == null )
+            if ( hospitals == null ){
+                errorCode = ERROR_HOSPITALS;
                 return false;
+            }
 
             List<Location> locations = getHospitalLocations( hospitalUrl, token.getUser().getHospitalId(), token.getId() );
-            if ( locations == null )
+            if ( locations == null ){
+                errorCode = ERROR_LOCATIONS;
                 return false;
+            }
 
             parentActivity.setToken( token );
             parentActivity.setRole( role );
@@ -542,28 +395,45 @@ public class LoginActivity extends AppCompatActivity
 
             if ( success )
             {
-                //finish();
-
                 Intent intent = new Intent( LoginActivity.this, LoggedActivity.class);
                 startActivity(intent);
             }
             else
             {
+                String errorMessage;
                 switch ( errorCode )
                 {
                     case ERROR_INVALID_LOGIN:
-                        passwordView.setError( getString( R.string.error_incorrect_password ) );
-                        passwordView.requestFocus();
+                        errorMessage = getString( R.string.error_incorrect_password );
                     break;
 
                     case ERROR_INVALID_PROFILE:
-                        emailView.setError( getString( R.string.error_user_not_authorized ) );
-                        emailView.requestFocus();
+                        errorMessage = getString( R.string.error_user_not_authorized);
                     break;
 
+                    case ERROR_HOSPITALS:
+                        errorMessage = getString( R.string.error_hospitals);
+                    break;
+
+                    case ERROR_LOCATIONS:
+                        errorMessage = getString( R.string.error_locations);
+                     break;
+
                     default:
+                        errorMessage = getString( R.string.error_unknown );
                     break;
                 }
+
+                AlertDialog alertDialog = new AlertDialog.Builder(LoginActivity.this).create();
+                alertDialog.setTitle(getString( R.string.failure));
+                alertDialog.setMessage( errorMessage );
+                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString( R.string.ok ),
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
             }
         }
 
