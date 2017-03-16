@@ -239,6 +239,15 @@ public class HubActivity extends MyBaseActivity {
     }
 
     private void onInfoClick() {
+        Intent intent = new Intent( this, InformationActivity.class);
+        startActivity(intent);
+
+        /*if ( task == null ) {
+            mHubLabel.setText( R.string.ble_device_retrieving );
+            showProgress(true, mContainerView, mProgressView);
+            task = new InformationTask();
+            task.execute((Void) null);
+        }*/
     }
 
     private void onScanClick() {

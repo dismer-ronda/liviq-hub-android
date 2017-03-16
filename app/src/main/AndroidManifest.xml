@@ -11,7 +11,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -20,7 +22,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
         <activity
             android:name=".LoginActivity"
             android:label="@string/app_name">
@@ -38,13 +39,16 @@
             android:label="@string/title_activity_logged" />
         <activity
             android:name=".LocationActivity"
-            android:label="@string/title_activity_location"/>
+            android:label="@string/title_activity_location" />
         <activity
             android:name=".HubActivity"
-            android:label="@string/title_activity_hub"/>
+            android:label="@string/title_activity_hub" />
         <activity
             android:name=".ConfigurationActivity"
-            android:label="@string/title_activity_configuration"/>
+            android:label="@string/title_activity_configuration" />
+        <activity
+            android:name=".InformationActivity"
+            android:label="@string/title_activity_information"/>
     </application>
 
 </manifest>

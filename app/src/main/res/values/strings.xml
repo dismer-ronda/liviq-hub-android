@@ -19,6 +19,7 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_activity_logged">Logged in as</string>
+    <string name="title_activity_information">IQ Hub Information</string>
     <string name="start_configuration">Next</string>
     <string name="user_name">Name:</string>
     <string name="hospital_name">Hospital:</string>
@@ -44,6 +45,8 @@
     <string name="ble_device_configuring">Configuring IQ Hub</string>
     <string name="ble_device_not_found">No IQ Hubs found. Scan again</string>
     <string name="ble_device_configure">Set IQ Hub configuration</string>
+    <string name="ble_device_retrieving">Retrieving IQ HUB information</string>
+    <string name="ble_device_status">IQ HUB status</string>
     <string name="scan">Scan</string>
     <string name="setup">Setup</string>
     <string name="remember_login">Remember login</string>
@@ -65,10 +68,30 @@
     <string name="enable_proxy">Enable proxy</string>
     <string name="enable_static">Enable static IP</string>
 
+    <string name="prompt_hub_name">IQ Hub name</string>
+    <string name="prompt_hub_description">IQ Hub description</string>
+
+    <string name="status_macaddress">MAC Address</string>
+    <string name="status_name">Name</string>
+    <string name="status_description">Description</string>
+    <string name="status_location">Location</string>
+    <string name="status_version">Version</string>
+    <string name="status_http">HTTP status</string>
+    <string name="status_https">HTTPS status</string>
+    <string name="status_insights">Insights status</string>
+    <string name="status_internet">Internet status</string>
+    <string name="status_lost">Lost</string>
+    <string name="status_seen">Last seen</string>
+
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="success">Success</string>
     <string name="failure">Failure</string>
     <string name="at">at</string>
     <string name="exit">exit</string>
     <string name="not_ready">Not ready to configure</string>
     <string name="setup_instructions"> Confirm green led is lit on selected hub. If not, press back and choose a different hub. Select options and press transmit to setup hub.</string>
+    <string name="location_none">None</string>
+    <string name="information_failure">Error retrieving IQ Hub information</string>
+    <string name="retrieve">Retrieve</string>
 </resources>

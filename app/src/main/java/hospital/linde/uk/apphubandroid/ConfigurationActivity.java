@@ -78,6 +78,9 @@ public class ConfigurationActivity extends MyBaseActivity {
     private CheckBox checkStatic;
     private Button transmitButton;
 
+    private EditText hubNameView;
+    private EditText hubDescriptionView;
+
     private EditText wifiId;
     private EditText wifiPassword;
 
@@ -112,6 +115,8 @@ public class ConfigurationActivity extends MyBaseActivity {
     private String hospitalUrl;
     private Pegasus pegasus = null;
     private String pegasusToken = null;
+    private String hubName;
+    private String hubDescription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,6 +143,9 @@ public class ConfigurationActivity extends MyBaseActivity {
         staticView = findViewById(R.id.static_configuration);
 
         checkSetup = (CheckBox) findViewById(R.id.checkbox_setup);
+
+        hubNameView = (EditText) findViewById(R.id.hub_name);
+        hubDescriptionView = (EditText) findViewById(R.id.hub_description);
 
         checkWifi = (CheckBox) findViewById(R.id.checkbox_wifi);
         checkWifi.setChecked( enableWifi );
@@ -279,6 +287,9 @@ public class ConfigurationActivity extends MyBaseActivity {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
+
+        hubName = hubNameView.getText().toString();
+        hubDescription = hubDescriptionView.getText().toString();
 
         task = new ConfigurationTask(this);
         task.execute((Void) null);
@@ -701,6 +712,10 @@ public class ConfigurationActivity extends MyBaseActivity {
 
                 pegasus.setLocationId( LocationActivity.getSelectedLocation().getId() );
                 pegasus.setHospitalId( LoginActivity.getHospital().getId() );
+                if ( !hubName.isEmpty() )
+                    pegasus.setName( hubName );
+                if ( !hubDescription.isEmpty() )
+                    pegasus.setFriendlyName( hubDescription );
                 pegasus.setDeleted( "0" );
 
                 updatePegasus( hospitalUrl, pegasus, LoginActivity.getToken().getId() );
@@ -709,11 +724,11 @@ public class ConfigurationActivity extends MyBaseActivity {
             {
                 pegasus = new Pegasus();
 
-                pegasus.setMacAddress( HubActivity.getSelectedMac() );
-                pegasus.setName( HubActivity.getSelectedMac() );
-                pegasus.setFriendlyName( HubActivity.getSelectedMac() );
                 pegasus.setLocationId( LocationActivity.getSelectedLocation().getId() );
                 pegasus.setHospitalId( LoginActivity.getHospital().getId() );
+                pegasus.setName( hubName );
+                pegasus.setFriendlyName( hubDescription );
+                pegasus.setMacAddress( HubActivity.getSelectedMac() );
                 pegasus.setDeleted( "0" );
 
                 addPegasus( hospitalUrl, pegasus, LoginActivity.getToken().getId() );
