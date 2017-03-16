@@ -3,6 +3,8 @@ package hospital.linde.uk.apphubandroid.utils;
 import android.content.res.AssetManager;
 import android.util.Log;
 
+import com.google.gson.reflect.TypeToken;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -260,4 +263,152 @@ public class Utils
         return null;
     }
 
+    public static Pegasus getPegasus(String hospitalUrl, String macAddress, Integer hospitalId, String token, int timeout) {
+        try {
+            String filter = URLEncoder.encode("{\"where\":{\"macAddress\":\"" + macAddress + "\", \"hospitalId\":" + hospitalId + "}}", "UTF8");
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/hubs/findOne?filter=" + filter + "&access_token=" + token, "GET", timeout, null, headers);
+            Log.i(TAG, "getPegasus " + response);
+
+            return (Pegasus) JsonSerializer.toPojo(response, Pegasus.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static Token getLoginToken(String hospitalUrl, String email, String password, int timeout) {
+        try {
+            User user = new User();
+            user.setEmail(email);
+            user.setPassword(password);
+
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/appusers/login/?include=user", "POST", timeout, JsonSerializer.toJson(user), headers);
+            Log.i(TAG, "getLoginToken " + response);
+
+            return (Token) JsonSerializer.toPojo(response, Token.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static Role getUserRole(String hospitalUrl, Integer roleId, String token, int timeout) {
+        try {
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/Roles/" + roleId + "?access_token=" + token, "GET", timeout, null, headers);
+            Log.i(TAG, "getUserRole " + response);
+
+            return (Role) JsonSerializer.toPojo(response, Role.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static List<Hospital> getHospitalData(String hospitalUrl, Integer hospitalId, String token, int timeout) {
+        try {
+            String filter = URLEncoder.encode("{\"where\":{\"id\":" + hospitalId + "},\"include\":\"configParameters\"}", "UTF8");
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/hospitals?filter=" + filter + "&access_token=" + token, "GET", timeout, null, headers);
+            Log.i(TAG, "getHospitalData " + response);
+
+            return (List<Hospital>) JsonSerializer.toArrayList(response, new TypeToken<ArrayList<Hospital>>() {
+            }.getType());
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static List<Location> getHospitalLocations(String hospitalUrl, Integer hospitalId, String token, int timeout) {
+        try {
+            String filter = URLEncoder.encode("{\"where\":{\"hospitalId\":" + hospitalId + ", \"deleted\":0},\"include\":[\"configParameters\"]}", "UTF8");
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/locations?filter=" + filter + "&access_token=" + token, "GET", timeout, null, headers);
+            Log.i(TAG, "getHospitalLocations " + response);
+
+            return (List<Location>) JsonSerializer.toArrayList(response, new TypeToken<ArrayList<Location>>() {
+            }.getType());
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static Location getLocation(String hospitalUrl, Integer locationId, Integer hospitalId, String token, int timeout) {
+        try {
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/locations/" + locationId + "?hospitalId=" + hospitalId + "&access_token=" + token, "GET", timeout, null, headers);
+            Log.i(TAG, "getLocation " + response);
+
+            return (Location) JsonSerializer.toPojo(response, Location.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static String getPegasusToken(String hospitalUrl, Pegasus pegasus, String token, int timeout) {
+        try {
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/hubs/getToken?hospitalId=" + pegasus.getHospitalId() + "&access_token=" + token, "POST", timeout, JsonSerializer.toJson(pegasus), headers);
+            Log.i(TAG, "getPegasusToken " + response);
+
+            return response;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static boolean addPegasus(String hospitalUrl, Pegasus pegasus, String token, int timeout) {
+        HttpsURLConnection urlConnection = null;
+
+        try {
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/hubs?access_token=" + token, "PUT", timeout, JsonSerializer.toJson(pegasus), headers);
+            Log.i(TAG, "addPegasus " + response);
+
+            JsonSerializer.toPojo(response, Pegasus.class);
+
+            return true;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        } finally {
+            if (urlConnection != null)
+                urlConnection.disconnect();
+        }
+
+        return false;
+    }
+
+    public static boolean updatePegasus(String hospitalUrl, Pegasus pegasus, String token, int timeout) {
+        HttpsURLConnection urlConnection = null;
+
+        try {
+            String[] headers = {"Content-Type:application/json", "Accept:application/json"};
+            String response = Utils.platformCall(hospitalUrl + "/api/hubs/" + pegasus.getId() + "?access_token=" + token, "PUT", timeout, JsonSerializer.toJson(pegasus), headers);
+            Log.i(TAG, "updatePegasus " + response);
+
+            JsonSerializer.toPojo(response, Pegasus.class);
+
+            return true;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        } finally {
+            if (urlConnection != null)
+                urlConnection.disconnect();
+        }
+
+        return false;
+    }
 }

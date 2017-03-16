@@ -12,6 +12,7 @@ public class SettingsFragment extends PreferenceFragment {
 
     final static String SETTINGS_HOSPITAL_URL       = "iq_url";
     final static String SETTINGS_BlE_SCAN_TIMEOUT   = "ble_timeout";
+    final static String SETTINGS_HOSPITAL_TIMEOUT = "iq_timeout";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

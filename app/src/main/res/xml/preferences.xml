@@ -8,6 +8,12 @@
     </EditTextPreference>
 
     <EditTextPreference
+        android:title="Hospital Platform Timeout"
+        android:key="iq_timeout"
+        android:summary="Please provide Hospital IQ connection timeout"
+        android:defaultValue="10000"></EditTextPreference>
+
+    <EditTextPreference
         android:title="Bluetooth scaning timeout"
         android:key="ble_timeout"
         android:summary="Please provide bluetooth scaning timeout"

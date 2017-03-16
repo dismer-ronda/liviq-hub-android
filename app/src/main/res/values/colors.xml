@@ -5,4 +5,6 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#0C5C91</color>
     <color name="window_background">#CEE8EA</color>
+    <color name="color_unconfigured">#000000</color>
+    <color name="color_configured">#3DAA57</color>
 </resources>

@@ -89,7 +89,7 @@
     <string name="failure">Failure</string>
     <string name="at">at</string>
     <string name="exit">exit</string>
-    <string name="not_ready">Not ready to configure</string>
+    <string name="not_ready">Not ready</string>
     <string name="setup_instructions"> Confirm green led is lit on selected hub. If not, press back and choose a different hub. Select options and press transmit to setup hub.</string>
     <string name="location_none">None</string>
     <string name="information_failure">Error retrieving IQ Hub information</string>

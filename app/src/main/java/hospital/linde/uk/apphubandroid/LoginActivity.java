@@ -1,19 +1,14 @@
 package hospital.linde.uk.apphubandroid;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -24,18 +19,12 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import com.google.gson.reflect.TypeToken;
-
-import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.List;
 
 import hospital.linde.uk.apphubandroid.utils.Hospital;
-import hospital.linde.uk.apphubandroid.utils.JsonSerializer;
 import hospital.linde.uk.apphubandroid.utils.Location;
 import hospital.linde.uk.apphubandroid.utils.Role;
 import hospital.linde.uk.apphubandroid.utils.Token;
-import hospital.linde.uk.apphubandroid.utils.User;
 import hospital.linde.uk.apphubandroid.utils.Utils;
 import lombok.Getter;
 import lombok.Setter;
@@ -186,46 +175,10 @@ public class LoginActivity extends MyBaseActivity
         {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
-            showProgress(true);
+            showProgress(true, mLoginFormView, mProgressView);
 
-            mAuthTask = new UserLoginTask(this, email, password);
+            mAuthTask = new UserLoginTask(email, password);
             mAuthTask.execute((Void) null);
-        }
-    }
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
 
@@ -235,110 +188,30 @@ public class LoginActivity extends MyBaseActivity
      */
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean>
     {
-        public final int ERROR_NONE                     = 0;
-        public final int ERROR_INVALID_LOGIN            = 1;
-        public final int ERROR_INVALID_PROFILE          = 2;
-        public final int ERROR_HOSPITALS                = 3;
-        public final int ERROR_LOCATIONS                = 4;
+        private final int ERROR_NONE = 0;
+        private final int ERROR_INVALID_LOGIN = 1;
+        private final int ERROR_INVALID_PROFILE = 2;
+        private final int ERROR_HOSPITALS = 3;
+        private final int ERROR_LOCATIONS = 4;
 
         private final String email;
         private final String password;
-        private LoginActivity parentActivity;
         private int errorCode;
 
-        UserLoginTask( LoginActivity parentActivity, String email, String password )
+        UserLoginTask(String email, String password)
         {
-            this.parentActivity = parentActivity;
             this.email = email;
             this.password = password;
         }
 
         private void saveLoginCredentials()
         {
-            SharedPreferences sessionPref = parentActivity.getPreferences(Context.MODE_PRIVATE);
+            SharedPreferences sessionPref = LoginActivity.this.getPreferences(Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sessionPref.edit();
             editor.putString( "email", email );
             editor.putString( "password", password );
             editor.putBoolean( "remember", rememberLogin );
-            editor.commit();
-        }
-
-        private Token getLoginToken( String hospitalUrl )
-        {
-            try
-            {
-                User user = new User();
-                user.setEmail( email) ;
-                user.setPassword( password );
-
-                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
-                String response = Utils.platformCall( hospitalUrl + "/api/appusers/login/?include=user", "POST", 10000,  JsonSerializer.toJson(user), headers );
-                Log.i( TAG, "getLoginToken " + response );
-
-                return (Token)JsonSerializer.toPojo( response, Token.class );
-            }
-            catch ( Throwable e )
-            {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        private Role getUserRole(String hospitalUrl, Integer roleId, String token)
-        {
-            try
-            {
-                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
-                String response = Utils.platformCall( hospitalUrl + "/api/Roles/" + roleId + "?access_token=" + token, "GET", 10000, null, headers );
-                Log.i( TAG, "getUserRole " + response );
-
-                return (Role)JsonSerializer.toPojo( response, Role.class );
-            }
-            catch ( Throwable e )
-            {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        private List<Hospital> getHospitalData(String hospitalUrl, Integer hospitalId, String token)
-        {
-            try
-            {
-                String filter = URLEncoder.encode( "{\"where\":{\"id\":" + hospitalId + "},\"include\":\"configParameters\"}", "UTF8" );
-                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
-                String response = Utils.platformCall( hospitalUrl + "/api/hospitals?filter=" + filter + "&access_token=" + token, "GET", 10000, null, headers );
-                Log.i( TAG, "getHospitalData " + response );
-
-                return (List<Hospital>)JsonSerializer.toArrayList( response, new TypeToken<ArrayList<Hospital>>(){}.getType() );
-            }
-            catch ( Throwable e )
-            {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        private List<Location> getHospitalLocations( String hospitalUrl, Integer hospitalId, String token )
-        {
-            try
-            {
-                String filter = URLEncoder.encode( "{\"where\":{\"hospitalId\":" + hospitalId + ", \"deleted\":0},\"include\":[\"configParameters\"]}", "UTF8" );
-                String[] headers = { "Content-Type:application/json", "Accept:application/json" };
-                String response = Utils.platformCall( hospitalUrl + "/api/locations?filter=" + filter + "&access_token=" + token, "GET", 10000, null, headers );
-                Log.i( TAG, "getHospitalLocations " + response );
-
-                return (List<Location>)JsonSerializer.toArrayList( response, new TypeToken<ArrayList<Location>>(){}.getType() );
-            }
-            catch ( Throwable e )
-            {
-                e.printStackTrace();
-            }
-
-            return null;
+            editor.apply();
         }
 
         @Override
@@ -346,14 +219,15 @@ public class LoginActivity extends MyBaseActivity
         {
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences( LoginActivity.this );
             String hospitalUrl = sharedPref.getString( SettingsFragment.SETTINGS_HOSPITAL_URL, "https://iqhospital.io");
+            Integer timeout = Integer.parseInt(sharedPref.getString(SettingsFragment.SETTINGS_HOSPITAL_TIMEOUT, "10000"));
 
-            Token token = getLoginToken( hospitalUrl );
+            Token token = Utils.getLoginToken(hospitalUrl, email, password, timeout);
             if ( token == null ) {
                 errorCode = ERROR_INVALID_LOGIN;
                 return false;
             }
 
-            Role role = getUserRole( hospitalUrl, token.getUser().getRoleId(), token.getId() );
+            Role role = Utils.getUserRole(hospitalUrl, token.getUser().getRoleId(), token.getId(), timeout);
             if ( role == null ) {
                 errorCode = ERROR_INVALID_LOGIN;
                 return false;
@@ -365,22 +239,22 @@ public class LoginActivity extends MyBaseActivity
                 return false;
             }
 
-            List<Hospital> hospitals = getHospitalData( hospitalUrl, token.getUser().getHospitalId(), token.getId() );
+            List<Hospital> hospitals = Utils.getHospitalData(hospitalUrl, token.getUser().getHospitalId(), token.getId(), timeout);
             if ( hospitals == null ){
                 errorCode = ERROR_HOSPITALS;
                 return false;
             }
 
-            List<Location> locations = getHospitalLocations( hospitalUrl, token.getUser().getHospitalId(), token.getId() );
+            List<Location> locations = Utils.getHospitalLocations(hospitalUrl, token.getUser().getHospitalId(), token.getId(), timeout);
             if ( locations == null ){
                 errorCode = ERROR_LOCATIONS;
                 return false;
             }
 
-            parentActivity.setToken( token );
-            parentActivity.setRole( role );
-            parentActivity.setHospital( hospitals.get( 0 ) );
-            parentActivity.setLocations( locations );
+            LoginActivity.setToken(token);
+            LoginActivity.setRole(role);
+            LoginActivity.setHospital(hospitals.get(0));
+            LoginActivity.setLocations(locations);
 
             saveLoginCredentials();
 
@@ -391,7 +265,7 @@ public class LoginActivity extends MyBaseActivity
         protected void onPostExecute( final Boolean success )
         {
             mAuthTask = null;
-            showProgress(false);
+            showProgress(false, mLoginFormView, mProgressView);
 
             if ( success )
             {
@@ -441,7 +315,7 @@ public class LoginActivity extends MyBaseActivity
         protected void onCancelled()
         {
             mAuthTask = null;
-            showProgress( false );
+            showProgress(false, mLoginFormView, mProgressView);
         }
     }
 

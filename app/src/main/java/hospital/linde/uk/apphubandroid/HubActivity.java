@@ -3,8 +3,6 @@ package hospital.linde.uk.apphubandroid;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -12,15 +10,20 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -34,6 +37,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import hospital.linde.uk.apphubandroid.utils.Constants;
+import hospital.linde.uk.apphubandroid.utils.Pegasus;
 import hospital.linde.uk.apphubandroid.utils.Utils;
 import lombok.Getter;
 
@@ -49,34 +54,37 @@ public class HubActivity extends MyBaseActivity {
     private Button nextButton;
     private Button infoButton;
 
-    private ArrayList<String> listItems = new ArrayList<String>();
+    private ArrayList<String> listItems = new ArrayList<>();
+    private HashMap<String, Pegasus> mapPegasus = new HashMap<>();
+
     private ArrayAdapter<String> adapter;
 
-    private HashMap<String, String> bleMap = new HashMap<String, String>();
+    private HashMap<String, String> bleMap = new HashMap<>();
     private boolean scanning = false;
 
     private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothGattService service;
-    private BluetoothGattCharacteristic characteristic;
 
-    @Getter private static BluetoothDevice selectedHub = null;
-    @Getter private static String selectedMac = null;
+    @Getter
+    private static BluetoothDevice selectedHub = null;
+    @Getter
+    private static String selectedMac = null;
+    @Getter
+    private static Pegasus selectedPegasus = null;
 
     private ScanCallback leScanCallback = new ScanCallback() {
         private void registerBluetoothDevice(BluetoothDevice device, int rssi, ScanRecord scanRecord) {
             byte[] bytes = scanRecord.getBytes();
 
-            if ( bytes.length >= 20 ) {
-                String pegasusMac = Utils.convertToHex( bytes[14] ) + ":"
-                        + Utils.convertToHex( bytes[15] ) + ":"
-                        + Utils.convertToHex( bytes[16] ) + ":"
-                        + Utils.convertToHex( bytes[17] ) + ":"
-                        + Utils.convertToHex( bytes[18] )+ ":"
-                        + Utils.convertToHex( bytes[19] );
+            if (bytes.length >= 20) {
+                String pegasusMac = Utils.convertToHex(bytes[14]) + ":"
+                        + Utils.convertToHex(bytes[15]) + ":"
+                        + Utils.convertToHex(bytes[16]) + ":"
+                        + Utils.convertToHex(bytes[17]) + ":"
+                        + Utils.convertToHex(bytes[18]) + ":"
+                        + Utils.convertToHex(bytes[19]);
                 Log.i(TAG, "pegasusMac " + pegasusMac);
 
-                if ( pegasusMac.startsWith( "B8:27:EB:") )
-                {
+                if (pegasusMac.startsWith("B8:27:EB:")) {
                     for (String item : listItems)
                         if (item.equals(pegasusMac))
                             return;
@@ -108,7 +116,7 @@ public class HubActivity extends MyBaseActivity {
         public void onScanFailed(int errorCode) {
             super.onScanFailed(errorCode);
 
-            System.out.println("BLE failed " + errorCode);
+            Log.i(TAG, "BLE failed " + errorCode);
         }
     };
 
@@ -123,24 +131,25 @@ public class HubActivity extends MyBaseActivity {
                     bluetoothLeScanner.stopScan(leScanCallback);
 
                     adapter.notifyDataSetChanged();
-
-                    mHubLabel.setText( listItems.size() > 0 ? R.string.ble_device_select : R.string.ble_device_not_found );
+                    mHubLabel.setText(listItems.size() > 0 ? R.string.ble_device_select : R.string.ble_device_not_found);
                     showProgress(false, mContainerView, mProgressView);
 
                     Toast.makeText(HubActivity.this, getString(R.string.ble_scan_report).replaceAll("%1", Integer.toString(listItems.size())), Toast.LENGTH_SHORT).show();
+
+                    new RetrieveTask().execute((Void) null);
                 }
             }, bleTimeout);
 
             scanning = true;
 
             ScanSettings.Builder builder = new ScanSettings.Builder();
-            builder.setScanMode( ScanSettings.SCAN_MODE_LOW_LATENCY );
+            builder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Log.i( TAG, "set BLE aggressive scan");
-                builder.setMatchMode( ScanSettings.MATCH_MODE_AGGRESSIVE );
+                Log.i(TAG, "set BLE aggressive scan");
+                builder.setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE);
 
-                Log.i( TAG, "set BLE max number of advertisement");
-                builder.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT );
+                Log.i(TAG, "set BLE max number of advertisement");
+                builder.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT);
             }
 
             ScanSettings settings = builder.build();
@@ -152,16 +161,33 @@ public class HubActivity extends MyBaseActivity {
         }
     }
 
+    private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            Log.i(TAG, "onReceive " + action);
+
+            if (Constants.ACTION_UPDATE_HUB.equals(action)) {
+                updateConfiguredHub();
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hub);
 
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Constants.ACTION_UPDATE_HUB);
+        registerReceiver(broadcastReceiver, filter);
+
         mProgressView = findViewById(R.id.search_progress);
         mContainerView = findViewById(R.id.hub_list);
-        mHubLabel = (TextView)findViewById(R.id.hub_label);
+        mHubLabel = (TextView) findViewById(R.id.hub_label);
 
-        setTitle(LoginActivity.getHospital().getName() + " " + getString( R.string.at ) + " " + LocationActivity.getSelectedLocation().getName());
+        setTitle(LoginActivity.getHospital().getName() + " " + getString(R.string.at) + " " + LocationActivity.getSelectedLocation().getName());
 
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
 
@@ -218,9 +244,12 @@ public class HubActivity extends MyBaseActivity {
                     @Override
                     public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
                         selectedMac = ((TextView) arg1).getText().toString();
-                        selectedHub = mBluetoothAdapter.getRemoteDevice( bleMap.get( selectedMac ) );
+                        selectedHub = mBluetoothAdapter.getRemoteDevice(bleMap.get(selectedMac));
+                        selectedPegasus = mapPegasus.get(selectedMac);
+
                         nextButton.setVisibility(View.VISIBLE);
-                        infoButton.setVisibility(View.VISIBLE);
+
+                        infoButton.setVisibility(selectedPegasus != null ? View.VISIBLE : View.GONE);
                     }
                 }
         );
@@ -239,20 +268,16 @@ public class HubActivity extends MyBaseActivity {
     }
 
     private void onInfoClick() {
-        Intent intent = new Intent( this, InformationActivity.class);
-        startActivity(intent);
-
-        /*if ( task == null ) {
-            mHubLabel.setText( R.string.ble_device_retrieving );
-            showProgress(true, mContainerView, mProgressView);
-            task = new InformationTask();
-            task.execute((Void) null);
-        }*/
+        if (selectedHub != null && selectedPegasus != null) {
+            Intent intent = new Intent(this, InformationActivity.class);
+            startActivity(intent);
+        }
     }
 
     private void onScanClick() {
         selectedMac = null;
         selectedHub = null;
+        selectedPegasus = null;
 
         infoButton.setVisibility(View.GONE);
         nextButton.setVisibility(View.GONE);
@@ -262,19 +287,94 @@ public class HubActivity extends MyBaseActivity {
 
         listView.setAdapter(adapter);
 
-        mHubLabel.setText( R.string.ble_device_scanning );
+        mHubLabel.setText(R.string.ble_device_scanning);
 
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences( this );
-        bleTimeout = Integer.parseInt( sharedPref.getString( SettingsFragment.SETTINGS_BlE_SCAN_TIMEOUT, "5000") );
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        bleTimeout = Integer.parseInt(sharedPref.getString(SettingsFragment.SETTINGS_BlE_SCAN_TIMEOUT, "5000"));
 
         showProgress(true, mContainerView, mProgressView);
         scanLeDevice(true);
     }
 
     private void onTransmitClick() {
-        if (selectedHub != null) {
-            Intent intent = new Intent( this, ConfigurationActivity.class);
+        if (selectedHub != null && selectedPegasus != null) {
+            Intent intent = new Intent(this, ConfigurationActivity.class);
             startActivity(intent);
+        }
+    }
+
+    public void updateConfiguredHub() {
+        int count = listView.getCount();
+        for (int i = 0; i < count; i++) {
+            TextView view = (TextView) listView.getChildAt(i);
+
+            if (view != null) {
+                String macAddress = view.getText().toString();
+
+                if (macAddress.equals(selectedMac))
+                    view.setTextColor(getColor(R.color.color_configured));
+            }
+        }
+    }
+
+    public class RetrieveTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(HubActivity.this);
+            String hospitalUrl = sharedPref.getString(SettingsFragment.SETTINGS_HOSPITAL_URL, "https://iqhospital.io");
+            Integer timeout = Integer.parseInt(sharedPref.getString(SettingsFragment.SETTINGS_HOSPITAL_TIMEOUT, "10000"));
+
+            for (String item : listItems) {
+                Pegasus pegasus = Utils.getPegasus(hospitalUrl, item, LoginActivity.getHospital().getId(), LoginActivity.getToken().getId(), timeout);
+
+                if (pegasus == null) {
+                    pegasus = new Pegasus();
+
+                    pegasus.setMacAddress(HubActivity.getSelectedMac());
+                    pegasus.setCurrentLocation(getString(R.string.location_none));
+                    pegasus.setStatusHttp(false);
+                    pegasus.setStatusHttps(false);
+                    pegasus.setStatusInsights(false);
+                    pegasus.setStatusInternet(false);
+                }
+
+                mapPegasus.put(item, pegasus);
+            }
+
+            return true;
+        }
+
+        private boolean isConfigured(Pegasus pegasus) {
+            return pegasus.getLocationId() != null && pegasus.getHospitalId() != null;
+        }
+
+        @Override
+        protected void onPostExecute(final Boolean success) {
+            if (success) {
+                int count = listView.getCount();
+                for (int i = 0; i < count; i++) {
+                    TextView view = (TextView) listView.getChildAt(i);
+
+                    if (view != null) {
+                        String macAddress = view.getText().toString();
+
+                        Pegasus pegasus = mapPegasus.get(macAddress);
+
+                        view.setTextColor(getColor(isConfigured(pegasus) ? R.color.color_configured : R.color.color_unconfigured));
+                    }
+                }
+            } else {
+                AlertDialog alertDialog = new AlertDialog.Builder(HubActivity.this).create();
+                alertDialog.setTitle(getString(R.string.failure));
+                alertDialog.setMessage(getString(R.string.information_failure));
+                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.ok),
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        });
+                alertDialog.show();
+            }
         }
     }
 }
