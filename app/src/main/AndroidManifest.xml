@@ -52,7 +52,10 @@
             android:label="@string/title_activity_information" />
         <activity
             android:name=".SuccessActivity"
-            android:label="@string/title_activity_success"></activity>
+            android:label="@string/title_activity_success" />
+        <activity
+            android:name=".AdvancedActivity"
+            android:label="@string/title_activity_advanced"></activity>
     </application>
 
 </manifest>

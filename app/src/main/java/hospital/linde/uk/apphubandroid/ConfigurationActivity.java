@@ -20,17 +20,14 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import hospital.linde.uk.apphubandroid.utils.ConfigurationData;
 import hospital.linde.uk.apphubandroid.utils.Constants;
 import hospital.linde.uk.apphubandroid.utils.Pegasus;
 import hospital.linde.uk.apphubandroid.utils.Utils;
@@ -43,27 +40,8 @@ public class ConfigurationActivity extends MyBaseActivity {
 
     private TextView topLabel;
 
-    private View setupView;
-    private View wifiView;
-    private View proxyView;
-    private View staticView;
-
     private Button transmitButton;
-
-    private EditText hubNameView;
-    private EditText hubDescriptionView;
-
-    private EditText wifiId;
-    private EditText wifiPassword;
-
-    private EditText proxyServerView;
-    private EditText proxyPortView;
-    private EditText proxyUserView;
-    private EditText proxyPasswordView;
-
-    private EditText addressView;
-    private EditText netmaskView;
-    private EditText gatewayView;
+    private Button advancedButton;
 
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic characteristic;
@@ -71,15 +49,9 @@ public class ConfigurationActivity extends MyBaseActivity {
     private List<byte[]> writeCommands;
     private int currentCommand;
 
-    private boolean enableWifi = false;
-    private boolean enableProxy = false;
-    private boolean enableStatic = false;
-
     private String hospitalUrl;
     private int timeout;
     private String pegasusToken = null;
-    private String hubName;
-    private String hubDescription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,10 +62,6 @@ public class ConfigurationActivity extends MyBaseActivity {
         hospitalUrl = sharedPref.getString(SettingsFragment.SETTINGS_HOSPITAL_URL, "https://iqhospital.io");
         timeout = Integer.parseInt(sharedPref.getString(SettingsFragment.SETTINGS_HOSPITAL_TIMEOUT, "10000"));
 
-        enableWifi = LoginActivity.getHospital().getConfigParameters().getWifiEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getWifiEnabled();
-        enableProxy = LoginActivity.getHospital().getConfigParameters().getProxyEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getProxyEnabled();
-        enableStatic = false; /*LoginActivity.getHospital().getConfigParameters().getProxyEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getStaticEnabled();*/
-
         mContainerView = findViewById(R.id.contents);
         mProgressView = findViewById(R.id.search_progress);
 
@@ -102,54 +70,7 @@ public class ConfigurationActivity extends MyBaseActivity {
         TextView titleLabel = (TextView) findViewById(R.id.title_label);
         titleLabel.setText(LoginActivity.getHospital().getName());
 
-        topLabel.setText(getString(R.string.setup_label_format).replace("$hub", HubActivity.getSelectedMac()).replace("$location", LocationActivity.getSelectedLocation().getName()));
-
-        setupView = findViewById(R.id.hub_configuration);
-        setupView.setVisibility(View.GONE);
-
-        wifiView = findViewById(R.id.wifi_configuration);
-        proxyView = findViewById(R.id.proxy_configuration);
-        staticView = findViewById(R.id.static_configuration);
-
-        hubNameView = (EditText) findViewById(R.id.hub_name);
-        hubDescriptionView = (EditText) findViewById(R.id.hub_description);
-
-        CheckBox checkWifi = (CheckBox) findViewById(R.id.checkbox_wifi);
-        checkWifi.setChecked(enableWifi);
-
-        wifiView.setVisibility(enableWifi ? View.VISIBLE : View.GONE);
-
-        wifiId = (EditText) findViewById(R.id.wifi_ssid);
-        wifiId.setText(LoginActivity.getWifiSSID());
-
-        wifiPassword = (EditText) findViewById(R.id.wifi_password);
-        wifiPassword.setText(LoginActivity.getWifiSecurityKey());
-
-        CheckBox checkProxy = (CheckBox) findViewById(R.id.checkbox_proxy);
-        checkProxy.setChecked(enableProxy);
-
-        proxyView.setVisibility(enableProxy ? View.VISIBLE : View.GONE);
-
-        proxyServerView = (EditText) findViewById(R.id.proxy_server);
-        proxyServerView.setText(LoginActivity.getProxyServer());
-
-        proxyPortView = (EditText) findViewById(R.id.proxy_port);
-        proxyPortView.setText(LoginActivity.getProxyPort());
-
-        proxyUserView = (EditText) findViewById(R.id.proxy_user);
-        proxyUserView.setText(LoginActivity.getProxyUser());
-
-        proxyPasswordView = (EditText) findViewById(R.id.proxy_password);
-        proxyPasswordView.setText(LoginActivity.getProxyPassword());
-
-        CheckBox checkStatic = (CheckBox) findViewById(R.id.checkbox_static);
-        checkStatic.setChecked(enableStatic);
-
-        staticView.setVisibility(enableStatic ? View.VISIBLE : View.GONE);
-
-        addressView = (EditText) findViewById(R.id.address);
-        netmaskView = (EditText) findViewById(R.id.netmask);
-        gatewayView = (EditText) findViewById(R.id.gateway);
+        topLabel.setText(getString(R.string.setup_label_format).replace("$hub", HubActivity.getSelectedPegasus().getName()).replace("$location", LocationActivity.getSelectedLocation().getName()));
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Constants.ACTION_GATT_CONNECTED);
@@ -159,6 +80,7 @@ public class ConfigurationActivity extends MyBaseActivity {
         filter.addAction(Constants.ACTION_DATA_AVAILABLE);
         filter.addAction(Constants.ACTION_DESCRIPTOR_WRITE);
         filter.addAction(Constants.ACTION_PIPELINE_BROKEN);
+        filter.addAction(Constants.ACTION_TRANSMIT);
 
         registerReceiver(mGattUpdateReceiver, filter);
 
@@ -171,6 +93,15 @@ public class ConfigurationActivity extends MyBaseActivity {
             @Override
             public void onClick(View view) {
                 onBackPressed();
+            }
+        });
+
+        advancedButton = (Button) findViewById(R.id.advanced);
+        advancedButton.setVisibility(View.GONE);
+        advancedButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onAdvancedPressed();
             }
         });
 
@@ -190,44 +121,6 @@ public class ConfigurationActivity extends MyBaseActivity {
         super.onDestroy();
     }
 
-    public void onCheckboxSetupClicked(View view) {
-        boolean enableSetup = ((CheckBox) view).isChecked();
-        setupView.setVisibility(enableSetup ? View.VISIBLE : View.GONE);
-    }
-
-    public void onCheckboxWifiClicked(View view) {
-        View focus = this.getCurrentFocus();
-        if (focus == wifiId || focus == wifiPassword) {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
-
-        enableWifi = ((CheckBox) view).isChecked();
-        wifiView.setVisibility(enableWifi ? View.VISIBLE : View.GONE);
-    }
-
-    public void onCheckboxProxyClicked(View view) {
-        View focus = this.getCurrentFocus();
-        if (focus == proxyServerView || focus == proxyPortView || focus == proxyUserView || focus == proxyPasswordView) {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
-
-        enableProxy = ((CheckBox) view).isChecked();
-        proxyView.setVisibility(enableProxy ? View.VISIBLE : View.GONE);
-    }
-
-    public void onCheckboxStaticClicked(View view) {
-        View focus = this.getCurrentFocus();
-        if (focus == addressView || focus == netmaskView || focus == gatewayView) {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
-
-        enableStatic = ((CheckBox) view).isChecked();
-        staticView.setVisibility(enableStatic ? View.VISIBLE : View.GONE);
-    }
-
     @Override
     public void onBackPressed() {
         mBluetoothGatt.close();
@@ -236,8 +129,47 @@ public class ConfigurationActivity extends MyBaseActivity {
         super.onBackPressed();
     }
 
-    private void onTransmitClick() {
+    public void onAdvancedPressed() {
+        Intent intent = new Intent(this, AdvancedActivity.class);
+        startActivity(intent);
+    }
+
+    private void transmitDefaultConfiguration() {
         showProgress(true, mContainerView, mProgressView);
+
+        ConfigurationData data = new ConfigurationData();
+
+        data.setEnableWifi(LoginActivity.getHospital().getConfigParameters().getWifiEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getWifiEnabled());
+        data.setEnableProxy(LoginActivity.getHospital().getConfigParameters().getProxyEnabled() == null ? false : LoginActivity.getHospital().getConfigParameters().getProxyEnabled());
+        data.setEnableStatic(false);
+
+        data.setHubName(Utils.getEmptyIfNull(HubActivity.getSelectedPegasus().getName()));
+        data.setHubDescription(Utils.getEmptyIfNull(HubActivity.getSelectedPegasus().getFriendlyName()));
+
+        data.setWifiId(Utils.getEmptyIfNull(LoginActivity.getWifiSSID()));
+        data.setWifiPassword(Utils.getEmptyIfNull(LoginActivity.getWifiSecurityKey()));
+
+        data.setProxyServer(Utils.getEmptyIfNull(LoginActivity.getProxyServer()));
+        data.setProxyPort(Utils.getEmptyIfNull(LoginActivity.getProxyPort()));
+        data.setProxyUser(Utils.getEmptyIfNull(LoginActivity.getProxyUser()));
+        data.setProxyPassword(Utils.getEmptyIfNull(LoginActivity.getProxyPassword()));
+
+        data.setAddress("");
+        data.setNetmask("");
+        data.setGateway("");
+
+        new ConfigurationTask(data).execute((Void) null);
+    }
+
+    private void transmitAdvancedConfiguration(ConfigurationData data) {
+        showProgress(true, mContainerView, mProgressView);
+        new ConfigurationTask(data).execute((Void) null);
+    }
+
+    private void onTransmitClick() {
+        transmitDefaultConfiguration();
+
+        /*showProgress(true, mContainerView, mProgressView);
 
         // Check if no view has focus:
         View view = this.getCurrentFocus();
@@ -249,7 +181,7 @@ public class ConfigurationActivity extends MyBaseActivity {
         hubName = hubNameView.getText().toString();
         hubDescription = hubDescriptionView.getText().toString();
 
-        new ConfigurationTask().execute((Void) null);
+        new ConfigurationTask().execute((Void) null);*/
     }
 
     private final BluetoothGattCallback mGattCallback =
@@ -340,6 +272,8 @@ public class ConfigurationActivity extends MyBaseActivity {
                 onCharacteristicWrite();
             } else if (Constants.ACTION_PIPELINE_BROKEN.equals(action)) {
                 onPipelineBroken();
+            } else if (Constants.ACTION_TRANSMIT.equals(action)) {
+                transmitAdvancedConfiguration((ConfigurationData) intent.getParcelableExtra(Constants.TRANSMIT_DATA));
             }
         }
     };
@@ -378,6 +312,7 @@ public class ConfigurationActivity extends MyBaseActivity {
     }
 
     private void onDescriptorWrite() {
+        advancedButton.setVisibility(View.VISIBLE);
         transmitButton.setVisibility(View.VISIBLE);
     }
 
@@ -416,7 +351,7 @@ public class ConfigurationActivity extends MyBaseActivity {
     private void terminateSuccess() {
         bluetoothDisconnect();
 
-        Toast.makeText(this, getString(R.string.configuration_success), Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, getString(R.string.configuration_success), Toast.LENGTH_SHORT).show();
 
         sendBroadcast(new Intent(Constants.ACTION_UPDATE_HUB));
         ConfigurationActivity.this.finish();
@@ -431,7 +366,7 @@ public class ConfigurationActivity extends MyBaseActivity {
         AlertDialog alertDialog = new AlertDialog.Builder(this).create();
         alertDialog.setTitle(getString(R.string.failure));
         alertDialog.setMessage(getString(R.string.configuration_failure));
-        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.ok),
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
@@ -470,29 +405,32 @@ public class ConfigurationActivity extends MyBaseActivity {
         return buffer;
     }
 
-    public String getProxySettings() {
-        String proxyServer = proxyServerView.getText().toString();
-        String proxyPort = proxyPortView.getText().toString();
-        String proxyUser = proxyUserView.getText().toString();
-        String proxyPassword = proxyPasswordView.getText().toString();
+    public String getProxySettings(ConfigurationData data) {
+        String proxyServer = data.getProxyServer();
+        String proxyPort = data.getProxyPort();
+        String proxyUser = data.getProxyUser();
+        String proxyPassword = data.getProxyPassword();
 
-        return enableProxy ? (!proxyServer.isEmpty() ? (proxyServer + (!proxyPort.isEmpty() ? (":" + proxyPort) : "") + (!proxyUser.isEmpty() ? (" -U " + proxyUser + ":" + proxyPassword) : "")) : " ") : " ";
+        boolean serverSet = !proxyServer.isEmpty();
+
+        return (data.isEnableProxy() && serverSet) ? "<ACTION id=\"A074\">" + (proxyServer + (!proxyPort.isEmpty() ? (":" + proxyPort) : "") + (!proxyUser.isEmpty() ? (" -U " + proxyUser + ":" + proxyPassword) : "")) + "</ACTION>\n" : "";
     }
 
-    private void prepareConfiguration(String hospitalUrl) {
-        String wifiAction = enableWifi ?
+    private void prepareConfiguration(String hospitalUrl, ConfigurationData data) {
+        Log.i(TAG, data.toString());
+        String wifiAction = data.isEnableWifi() ?
                 (
                         "<ACTION id=\"A071\">1</ACTION>\n" +
-                                "<ACTION id=\"A069\">" + wifiId.getText() + "</ACTION>\n" +
-                                "<ACTION id=\"A070\">" + wifiPassword.getText() + "</ACTION>\n"
+                                "<ACTION id=\"A069\">" + data.getWifiId() + "</ACTION>\n" +
+                                "<ACTION id=\"A070\">" + data.getWifiPassword() + "</ACTION>\n"
                 ) : "<ACTION id=\"A071\">0</ACTION>\n";
 
-        String staticAction = enableStatic ?
+        String staticAction = data.isEnableStatic() ?
                 (
                         "<ACTION id=\"A083\">1</ACTION>\n" +
-                                "<ACTION id=\"A084\">" + addressView.getText() + "</ACTION>\n" +
-                                "<ACTION id=\"A085\">" + netmaskView.getText() + "</ACTION>\n" +
-                                "<ACTION id=\"A086\">" + gatewayView.getText() + "</ACTION>\n"
+                                "<ACTION id=\"A084\">" + data.getAddress() + "</ACTION>\n" +
+                                "<ACTION id=\"A085\">" + data.getNetmask() + "</ACTION>\n" +
+                                "<ACTION id=\"A086\">" + data.getGateway() + "</ACTION>\n"
                 ) : "<ACTION id=\"A083\">0</ACTION>\n";
 
         String setupCommand =
@@ -513,7 +451,7 @@ public class ConfigurationActivity extends MyBaseActivity {
                         wifiAction +
                         staticAction +
 
-                        "<ACTION id=\"A074\">" + getProxySettings() + "</ACTION>\n" +
+                        getProxySettings(data) +
 
                         "</ACTIONS>\n" +
                         "</ANSWER>\n";
@@ -531,17 +469,23 @@ public class ConfigurationActivity extends MyBaseActivity {
     }
 
     public class ConfigurationTask extends AsyncTask<Void, Void, Boolean> {
+        private ConfigurationData data;
+
+        public ConfigurationTask(ConfigurationData data) {
+            this.data = data;
+        }
+
         @Override
         protected Boolean doInBackground(Void... params) {
-            Pegasus pegasus = Utils.getPegasus(hospitalUrl, HubActivity.getSelectedMac(), LoginActivity.getHospital().getId(), LoginActivity.getToken().getId(), timeout);
+            Pegasus pegasus = Utils.getPegasus(hospitalUrl, HubActivity.getSelectedPegasus().getMacAddress(), LoginActivity.getHospital().getId(), LoginActivity.getToken().getId(), timeout);
 
             if (pegasus != null) {
                 pegasus.setLocationId(LocationActivity.getSelectedLocation().getId());
                 pegasus.setHospitalId(LoginActivity.getHospital().getId());
-                if (!hubName.isEmpty())
-                    pegasus.setName(hubName);
-                if (!hubDescription.isEmpty())
-                    pegasus.setFriendlyName(hubDescription);
+                if (!data.getHubName().isEmpty())
+                    pegasus.setName(data.getHubName());
+                if (!data.getHubDescription().isEmpty())
+                    pegasus.setFriendlyName(data.getHubDescription());
                 pegasus.setDeleted("0");
 
                 Utils.updatePegasus(hospitalUrl, pegasus, LoginActivity.getToken().getId(), timeout);
@@ -550,8 +494,8 @@ public class ConfigurationActivity extends MyBaseActivity {
 
                 pegasus.setLocationId(LocationActivity.getSelectedLocation().getId());
                 pegasus.setHospitalId(LoginActivity.getHospital().getId());
-                pegasus.setName(hubName);
-                pegasus.setFriendlyName(hubDescription);
+                pegasus.setName(!data.getHubName().isEmpty() ? data.getHubName() : data.getAddress());
+                pegasus.setFriendlyName(data.getHubDescription());
                 pegasus.setMacAddress(HubActivity.getSelectedMac());
                 pegasus.setDeleted("0");
 
@@ -566,7 +510,7 @@ public class ConfigurationActivity extends MyBaseActivity {
         @Override
         protected void onPostExecute(final Boolean success) {
             if (success) {
-                prepareConfiguration(hospitalUrl);
+                prepareConfiguration(hospitalUrl, data);
 
                 currentCommand = 0;
                 writeCommand(writeCommands.get(currentCommand));

@@ -7,7 +7,7 @@
     android:orientation="vertical"
     android:gravity="center_horizontal"
 
-    tools:context="hospital.linde.uk.apphubandroid.HubActivity">
+    tools:context="hospital.linde.uk.apphubandroid.ConfigurationActivity">
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:orientation="horizontal"
@@ -100,195 +100,13 @@
                     android:layout_marginLeft="8dp"
                     android:text="@string/setup_instructions" />
 
-                <CheckBox android:id="@+id/checkbox_setup"
+                <Button
+                    android:id="@+id/advanced"
+                    android:layout_marginLeft="@dimen/buttons_margins"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/enable_setup"
                     android:layout_marginTop="8dp"
-                    android:onClick="onCheckboxSetupClicked"/>
-
-                <LinearLayout
-                    android:id="@+id/hub_configuration"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <android.support.design.widget.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <EditText
-                            android:id="@+id/hub_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/prompt_hub_name"
-                            android:maxLines="1"/>
-                    </android.support.design.widget.TextInputLayout>
-
-                    <android.support.design.widget.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-                        <EditText
-                            android:id="@+id/hub_description"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/prompt_hub_description"
-                            android:maxLines="1"/>
-                    </android.support.design.widget.TextInputLayout>
-
-                    <CheckBox android:id="@+id/checkbox_wifi"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/enable_wifi"
-                        android:onClick="onCheckboxWifiClicked"/>
-
-                    <LinearLayout
-                        android:id="@+id/wifi_configuration"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingLeft="@dimen/activity_horizontal_margin"
-                        android:paddingRight="@dimen/activity_horizontal_margin"
-                        android:orientation="vertical">
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-                            <EditText
-                                android:id="@+id/wifi_ssid"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_wifi_ssid"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-                            <EditText
-                                android:id="@+id/wifi_password"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_wifi_password"
-                                android:inputType="textPassword"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-                    </LinearLayout>
-
-                    <CheckBox android:id="@+id/checkbox_proxy"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/enable_proxy"
-                        android:onClick="onCheckboxProxyClicked"/>
-
-                    <LinearLayout
-                        android:id="@+id/proxy_configuration"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingLeft="@dimen/activity_horizontal_margin"
-                        android:paddingRight="@dimen/activity_horizontal_margin"
-                        android:orientation="vertical">
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/proxy_server"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_proxy_server"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/proxy_port"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_proxy_port"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/proxy_user"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_proxy_user"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/proxy_password"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_proxy_password"
-                                android:inputType="textPassword"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-                    </LinearLayout>
-
-                    <CheckBox android:id="@+id/checkbox_static"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/enable_static"
-                        android:onClick="onCheckboxStaticClicked"/>
-
-                    <LinearLayout
-                        android:id="@+id/static_configuration"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingLeft="@dimen/activity_horizontal_margin"
-                        android:paddingRight="@dimen/activity_horizontal_margin"
-                        android:orientation="vertical">
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/address"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_address"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/netmask"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_netmask"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-
-                        <android.support.design.widget.TextInputLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content">
-
-                            <EditText
-                                android:id="@+id/gateway"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:hint="@string/prompt_gateway"
-                                android:maxLines="1"/>
-                        </android.support.design.widget.TextInputLayout>
-                    </LinearLayout>
-
-                </LinearLayout>
+                    android:text="@string/advanced" />
 
             </LinearLayout>
         </ScrollView>

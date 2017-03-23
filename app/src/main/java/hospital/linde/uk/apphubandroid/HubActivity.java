@@ -28,7 +28,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,7 +133,7 @@ public class HubActivity extends MyBaseActivity {
                     showProgress(false, mContainerView, mProgressView);
                     scanButton.setEnabled(true);
 
-                    Toast.makeText(HubActivity.this, getString(R.string.ble_scan_report).replaceAll("%1", Integer.toString(listItems.size())), Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(HubActivity.this, getString(R.string.ble_scan_report).replaceAll("%1", Integer.toString(listItems.size())), Toast.LENGTH_SHORT).show();
 
                     new RetrieveTask().execute((Void) null);
                 }
@@ -338,6 +337,7 @@ public class HubActivity extends MyBaseActivity {
                 if (pegasus == null) {
                     pegasus = new Pegasus();
 
+                    pegasus.setName(HubActivity.getSelectedMac());
                     pegasus.setMacAddress(HubActivity.getSelectedMac());
                     pegasus.setCurrentLocation(getString(R.string.location_none));
                     pegasus.setStatusHttp(false);

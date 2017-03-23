@@ -102,5 +102,7 @@
     <string name="back_locations">Return to list of locations</string>
     <string name="confirmation">Confirmation</string>
     <string name="exit_confirmation">Are you sure to Exit the Application?</string>
+    <string name="title_activity_advanced">AdvancedActivity</string>
 
+    <string name="advanced">Advanced</string>
 </resources>

@@ -4,7 +4,7 @@
     <dimen name="activity_vertical_margin">8dp</dimen>
     <dimen name="fab_margin">8dp</dimen>
     <dimen name="buttons_margins">8dp</dimen>
-    <dimen name="buttons_min_width">80dp</dimen>
+    <dimen name="buttons_min_width">100dp</dimen>
     <dimen name="top_label_height">16dp</dimen>
     <dimen name="configured_padding">16dp</dimen>
     <dimen name="app_name_height">24dp</dimen>

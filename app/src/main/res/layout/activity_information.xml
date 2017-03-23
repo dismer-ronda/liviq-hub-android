@@ -90,12 +90,11 @@
 
                     <TextView
                         android:text="@string/status_macaddress"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_macaddress"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -106,12 +105,11 @@
 
                     <TextView
                         android:text="@string/status_name"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_name"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -122,12 +120,11 @@
 
                     <TextView
                         android:text="@string/status_description"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_descritpion"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -138,12 +135,11 @@
 
                     <TextView
                         android:text="@string/status_location"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_location"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -154,12 +150,11 @@
 
                     <TextView
                         android:text="@string/status_version"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_version"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -170,12 +165,11 @@
 
                     <TextView
                         android:text="@string/status_http"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_http"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -186,12 +180,11 @@
 
                     <TextView
                         android:text="@string/status_https"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_https"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -202,12 +195,11 @@
 
                     <TextView
                         android:text="@string/status_insights"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_insights"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -218,12 +210,11 @@
 
                     <TextView
                         android:text="@string/status_internet"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_internet"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -234,12 +225,11 @@
 
                     <TextView
                         android:text="@string/status_seen"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_seen"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
 
                 <View
@@ -250,12 +240,11 @@
 
                     <TextView
                         android:text="@string/status_lost"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
 
                     <TextView
                         android:id="@+id/status_lost"
-                        android:gravity="center"
-                        android:padding="3dip" />
+                        android:padding="@dimen/activity_horizontal_margin" />
                 </TableRow>
             </TableLayout>
         </ScrollView>

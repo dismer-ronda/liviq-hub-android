@@ -411,4 +411,8 @@ public class Utils
 
         return false;
     }
+
+    public static String getEmptyIfNull(String value) {
+        return value == null ? "" : value;
+    }
 }
