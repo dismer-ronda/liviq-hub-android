@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/settings_option"
+        android:icon="@mipmap/exit"
         android:title="@string/settings"/>
+    <item
+        android:id="@+id/exit"
+        android:icon="@mipmap/exit"
+        android:title="@string/exit" />
 </menu>

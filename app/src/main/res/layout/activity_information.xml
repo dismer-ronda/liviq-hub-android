@@ -6,221 +6,278 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
 
     tools:context="hospital.linde.uk.apphubandroid.InformationActivity">
 
-    <ImageView
-        android:id="@+id/logo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:background="@color/blue"
+        android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingBottom="@dimen/activity_vertical_margin"
-        android:src="@mipmap/linde_logo_big" />
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:layout_height="wrap_content">
 
-    <ScrollView
-        android:id="@+id/scroll_configuration"
-        android:layout_width="match_parent"
-        android:layout_weight="1"
-        android:layout_height="match_parent">
-
-        <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        <TextView
+            android:id="@+id/title_label"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="left"
             android:layout_weight="1"
-            android:stretchColumns="1">
+            android:background="@color/blue"
+            android:textColor="@color/white"
+            android:textSize="@dimen/top_label_height"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin" />
 
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_macaddress"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_macaddress"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_name"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_name"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_description"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_descritpion"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_location"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_location"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_version"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_version"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_http"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_http"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_https"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_https"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_insights"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_insights"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_internet"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_internet"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_seen"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_seen"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-
-            <View
-                android:layout_height="2dip"
-                android:background="@color/colorPrimary" />
-
-            <TableRow>
-
-                <TextView
-                    android:text="@string/status_lost"
-                    android:padding="3dip" />
-
-                <TextView
-                    android:id="@+id/status_lost"
-                    android:gravity="center"
-                    android:padding="3dip" />
-            </TableRow>
-        </TableLayout>
-    </ScrollView>
-
-    <LinearLayout
-        android:id="@+id/row_buttons"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="@dimen/buttons_margins"
-        android:layout_marginRight="@dimen/buttons_margins"
-        android:gravity="center|bottom"
-        android:orientation="horizontal"
-        android:paddingTop="@dimen/activity_vertical_margin">
-
-        <Button
-            android:id="@+id/back"
+        <ImageView
+            android:id="@+id/setup_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/back"
-            android:textStyle="bold" />
+            android:gravity="right|center_vertical"
+            android:onClick="onSetupClicked"
+            android:src="@mipmap/setup_48" />
+
+        <ImageView
+            android:id="@+id/exit_button"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="right|center_vertical"
+            android:onClick="onExitClicked"
+            android:src="@mipmap/exit_48" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/top_label"
+        android:text="@string/title_activity_information"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="left"
+        android:background="@color/dark_grey"
+        android:textColor="@color/white"
+        android:textSize="@dimen/top_label_height"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingTop="@dimen/activity_vertical_margin" />
+
+    <LinearLayout
+        android:id="@+id/contents"
+        android:layout_width="match_parent"
+        android:gravity="center_horizontal"
+        android:layout_height="match_parent"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:orientation="vertical">
+
+        <ScrollView
+            android:id="@+id/scroll_configuration"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="match_parent">
+
+            <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:stretchColumns="1">
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_macaddress"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_macaddress"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_name"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_name"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_description"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_descritpion"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_location"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_location"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_version"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_version"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_http"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_http"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_https"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_https"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_insights"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_insights"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_internet"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_internet"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_seen"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_seen"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+
+                <View
+                    android:layout_height="2dip"
+                    android:background="@color/colorPrimary" />
+
+                <TableRow>
+
+                    <TextView
+                        android:text="@string/status_lost"
+                        android:padding="3dip" />
+
+                    <TextView
+                        android:id="@+id/status_lost"
+                        android:gravity="center"
+                        android:padding="3dip" />
+                </TableRow>
+            </TableLayout>
+        </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/row_buttons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center|bottom"
+            android:orientation="horizontal"
+            android:paddingTop="@dimen/activity_vertical_margin">
+
+            <Button
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/back" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

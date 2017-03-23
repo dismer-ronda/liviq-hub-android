@@ -7,6 +7,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
@@ -27,7 +28,8 @@ public class LocationActivity extends MyBaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location);
 
-        setTitle( LoginActivity.getHospital().getName() );
+        TextView titleLabel = (TextView) findViewById(R.id.title_label);
+        titleLabel.setText(LoginActivity.getHospital().getName());
 
         ArrayList<String> values = new ArrayList<String>();
         for ( Location location : LoginActivity.getLocations() )
@@ -36,7 +38,7 @@ public class LocationActivity extends MyBaseActivity
 
         listView = (ListView) findViewById(R.id.list);
         listView.setChoiceMode( ListView.CHOICE_MODE_SINGLE );
-        listView.setSelector( R.color.colorPrimary );
+        listView.setSelector(R.color.selection);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener()
         {
             @Override

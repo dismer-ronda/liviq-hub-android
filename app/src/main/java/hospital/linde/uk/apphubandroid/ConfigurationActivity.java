@@ -13,7 +13,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -42,7 +41,7 @@ public class ConfigurationActivity extends MyBaseActivity {
     private View mContainerView;
     private View mProgressView;
 
-    private TextView mHubLabel;
+    private TextView topLabel;
 
     private View setupView;
     private View wifiView;
@@ -98,7 +97,12 @@ public class ConfigurationActivity extends MyBaseActivity {
         mContainerView = findViewById(R.id.contents);
         mProgressView = findViewById(R.id.search_progress);
 
-        mHubLabel = (TextView) findViewById(R.id.top_label);
+        topLabel = (TextView) findViewById(R.id.top_label);
+
+        TextView titleLabel = (TextView) findViewById(R.id.title_label);
+        titleLabel.setText(LoginActivity.getHospital().getName());
+
+        topLabel.setText(getString(R.string.setup_label_format).replace("$hub", HubActivity.getSelectedMac()).replace("$location", LocationActivity.getSelectedLocation().getName()));
 
         setupView = findViewById(R.id.hub_configuration);
         setupView.setVisibility(View.GONE);
@@ -158,14 +162,7 @@ public class ConfigurationActivity extends MyBaseActivity {
 
         registerReceiver(mGattUpdateReceiver, filter);
 
-        setTitle(HubActivity.getSelectedMac() + " at " + LocationActivity.getSelectedLocation().getName());
-
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(this, R.string.ble_not_supported, Toast.LENGTH_SHORT).show();
-            finish();
-        }
 
         mBluetoothGatt = HubActivity.getSelectedHub().connectGatt(this, false, mGattCallback);
 
@@ -185,6 +182,12 @@ public class ConfigurationActivity extends MyBaseActivity {
                 onTransmitClick();
             }
         });
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(mGattUpdateReceiver);
+        super.onDestroy();
     }
 
     public void onCheckboxSetupClicked(View view) {
@@ -230,15 +233,11 @@ public class ConfigurationActivity extends MyBaseActivity {
         mBluetoothGatt.close();
         mBluetoothGatt.disconnect();
 
-        unregisterReceiver(mGattUpdateReceiver);
-
-        // code here to show dialog
         super.onBackPressed();
     }
 
     private void onTransmitClick() {
         showProgress(true, mContainerView, mProgressView);
-        mHubLabel.setText(R.string.ble_device_configuring);
 
         // Check if no view has focus:
         View view = this.getCurrentFocus();
@@ -416,29 +415,18 @@ public class ConfigurationActivity extends MyBaseActivity {
 
     private void terminateSuccess() {
         bluetoothDisconnect();
-        unregisterReceiver(mGattUpdateReceiver);
 
         Toast.makeText(this, getString(R.string.configuration_success), Toast.LENGTH_SHORT).show();
 
         sendBroadcast(new Intent(Constants.ACTION_UPDATE_HUB));
         ConfigurationActivity.this.finish();
 
-        /*AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-        alertDialog.setTitle(getString( R.string.success));
-        alertDialog.setMessage( getString( R.string.configuration_success) );
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString( R.string.ok ),
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        ConfigurationActivity.this.finish();
-                        dialog.dismiss();
-                    }
-                });
-        alertDialog.show(); */
+        Intent intent = new Intent(this, SuccessActivity.class);
+        startActivity(intent);
     }
 
     private void terminateFailure() {
         bluetoothDisconnect();
-        unregisterReceiver(mGattUpdateReceiver);
 
         AlertDialog alertDialog = new AlertDialog.Builder(this).create();
         alertDialog.setTitle(getString(R.string.failure));
@@ -518,6 +506,9 @@ public class ConfigurationActivity extends MyBaseActivity {
 
                         "<ACTION id=\"A064\">" + LocationActivity.getSelectedLocation().getName() + "</ACTION>\n" +
                         "<ACTION id=\"A065\">" + LocationActivity.getSelectedLocation().getId() + "</ACTION>\n" +
+
+                        // Disable GPRS
+                        "<ACTION id=\"A068\">0</ACTION>\n" +
 
                         wifiAction +
                         staticAction +

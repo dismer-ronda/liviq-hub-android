@@ -15,6 +15,9 @@ public class InformationActivity extends MyBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_information);
 
+        TextView titleLabel = (TextView) findViewById(R.id.title_label);
+        titleLabel.setText(LoginActivity.getHospital().getName());
+
         TextView macaddressView = (TextView) findViewById(R.id.status_macaddress);
         TextView nameView = (TextView) findViewById(R.id.status_name);
         TextView descriptionView = (TextView) findViewById(R.id.status_descritpion);

@@ -14,6 +14,8 @@ public class Constants {
     public final static String ACTION_DESCRIPTOR_WRITE = "hospital.linde.uk.apphubandroid.ACTION_DESCRIPTOR_WRITE";
     public final static String ACTION_PIPELINE_BROKEN = "hospital.linde.uk.apphubandroid.ACTION_PIPELINE_BORKEN";
     public final static String ACTION_UPDATE_HUB = "hospital.linde.uk.apphubandroid.ACTION_UPDATE_HUB";
+    public final static String ACTION_HUBS_BACK = "hospital.linde.uk.apphubandroid.ACTION_HUBS_BACK";
+    public final static String ACTION_FINISH = "hospital.linde.uk.apphubandroid.ACTION_FINISH";
 
     public final static String IQHubMainCharacteristicsUuid = "0734594a-a8e7-4b1a-a6b1-cd5243059a57";
     public final static String IQHubMainServivceUuid = "14839ac4-7d7e-415c-9a42-167340cf2339";

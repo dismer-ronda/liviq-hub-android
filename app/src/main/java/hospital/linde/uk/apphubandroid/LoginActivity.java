@@ -1,15 +1,21 @@
 package hospital.linde.uk.apphubandroid;
 
+import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -17,6 +23,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import java.util.List;
@@ -32,7 +39,7 @@ import lombok.Setter;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends MyBaseActivity
+public class LoginActivity extends MyBaseProgressActivity implements PopupMenu.OnMenuItemClickListener
 {
     private final static String TAG = LoginActivity.class.getSimpleName();
 
@@ -66,10 +73,6 @@ public class LoginActivity extends MyBaseActivity
         String email = sessionPref.getString( "email", null );
         String pwd = sessionPref.getString( "password", null );
         rememberLogin = sessionPref.getBoolean( "remember", false );
-
-        System.out.println( "email " + email );
-        System.out.println( "password " + pwd );
-        System.out.println( "remember " + rememberLogin );
 
         setContentView(R.layout.activity_login);
 
@@ -113,6 +116,31 @@ public class LoginActivity extends MyBaseActivity
         });
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+
+            AlertDialog alertDialog = new AlertDialog.Builder(LoginActivity.this).create();
+            alertDialog.setTitle(getString(R.string.failure));
+            alertDialog.setMessage(getString(R.string.ble_not_supported));
+            alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.ok),
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            LoginActivity.this.finish();
+                        }
+                    });
+            alertDialog.show();
+        }
+
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
+        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
+
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, 1);
+        }
     }
 
     public void onCheckboxClicked(View view) {
@@ -269,7 +297,7 @@ public class LoginActivity extends MyBaseActivity
 
             if ( success )
             {
-                Intent intent = new Intent( LoginActivity.this, LoggedActivity.class);
+                Intent intent = new Intent(LoginActivity.this, LocationActivity.class);
                 startActivity(intent);
             }
             else
@@ -301,7 +329,7 @@ public class LoginActivity extends MyBaseActivity
                 AlertDialog alertDialog = new AlertDialog.Builder(LoginActivity.this).create();
                 alertDialog.setTitle(getString( R.string.failure));
                 alertDialog.setMessage( errorMessage );
-                alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString( R.string.ok ),
+                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
@@ -365,5 +393,25 @@ public class LoginActivity extends MyBaseActivity
         return proxyPassword;
     }
 
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.settings_option:
+                startActivity(new Intent(LoginActivity.this, SettingsActivity.class));
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public void showPopup(View v) {
+        startActivity(new Intent(LoginActivity.this, SettingsActivity.class));
+
+        /*PopupMenu popup = new PopupMenu(this, v);
+        popup.setOnMenuItemClickListener(this);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.settings_menu, popup.getMenu());
+        popup.show();*/
+    }
 }
 

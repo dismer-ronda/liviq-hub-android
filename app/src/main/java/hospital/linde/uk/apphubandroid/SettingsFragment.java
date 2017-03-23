@@ -1,6 +1,5 @@
 package hospital.linde.uk.apphubandroid;
 
-
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 
